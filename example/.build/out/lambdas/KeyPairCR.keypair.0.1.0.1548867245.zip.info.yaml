@@ -1,0 +1,10 @@
+---
+component: keypair
+function: KeyPairCR
+packagedAt: '1548867245'
+config:
+  code: cr_keypair.py
+  handler: cr_keypair.handler
+  runtime: python3.6
+  timeout: 600
+  role: KeyPairResource

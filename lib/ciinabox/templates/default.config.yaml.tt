@@ -1,0 +1,99 @@
+## ciinabox cfhighlander default config
+
+maximum_availability_zones: 5
+
+manage_ns_records: true
+
+stack_octet: 150
+
+ecs_instance_type: t2.small
+
+ip_blocks:
+  ciinabox:
+    - 127.0.0.1/32
+  internal:
+    - stack
+  webhooks:
+    - 104.192.143.192/28 #github
+    - 104.192.143.208/28 #github
+    - 104.192.136.0/21 #bitbucket outbound for hook
+    - 34.198.203.127/32 #bitbucket outbound for hook
+    - 34.198.178.64/32 #bitbucket outbound for hook
+    - 34.198.32.85/32 #bitbucket outbound for hook
+
+components:
+  vpc:
+    config:
+      manage_ns_records: true
+      subnets:
+        vpc_public:
+          allocation: 0
+          name: Public
+          type: public
+        compute:
+          allocation: 1
+          name: Compute
+          type: private
+  alb:
+    config:
+      records:
+        - "*"
+      securityGroups:
+        loadbalancer:
+          -
+            rules:
+              -
+                IpProtocol: tcp
+                FromPort: 443
+                ToPort: 443
+              -
+                IpProtocol: tcp
+                FromPort: 80
+                ToPort: 80
+            ips:
+              - ciinabox
+              - internal
+              - webhooks
+      listeners:
+        http:
+          port: 80
+          protocol: http
+          default_targetgroup: default
+        https:
+          port: 443
+          protocol: https
+          default_targetgroup: default
+          ssl_policy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06 #
+  ciinabox-web:
+    config:
+      health_check_grace_period: 20
+      cpu: 128
+      memory: 128
+      task_definition:
+        ciinabox:
+          image: nginx
+          tag_param: Version
+          tag_param_default: latest
+          env_vars:
+            ENVIRONMENT_NAME:
+              Fn::Sub: ${EnvironmentName}
+            AWS_REGION: 
+              Fn::Sub: ${AWS::Region}
+          ports:
+            - 80
+      targetgroup:
+        name: default
+        container: ciinabox
+        port: 80
+      iam_policies:
+        ssm:
+          action:
+            - ssm:GetParameters*
+          resource:
+            - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:ciinabox
+            - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:ciinabox/*
+
+config_export:
+  global:
+    - maximum_availability_zones
+    - ip_blocks

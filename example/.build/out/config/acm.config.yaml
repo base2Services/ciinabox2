@@ -1,0 +1,49 @@
+---
+acm_custom_resources:
+  custom_policies:
+    acm:
+      action:
+      - acm:*
+      - route53:*
+      resource: "*"
+  roles:
+    CertificateValidatorResource:
+      policies_inline:
+      - cloudwatch-logs
+      - acm
+  functions:
+    CertificateValidatorCR:
+      code: acm_certificate_validator_cr.py
+      handler: acm_certificate_validator_cr.handler
+      runtime: python3.6
+      timeout: 600
+      role: CertificateValidatorResource
+      environment:
+        ENVIRONMENT_NAME:
+          Ref: EnvironmentName
+nested_component: true
+maximum_availability_zones: 5
+ip_blocks:
+  ciinabox:
+  - 127.0.0.1/32
+  internal:
+  - stack
+  webhooks:
+  - 104.192.143.192/28
+  - 104.192.143.208/28
+  - 104.192.136.0/21
+  - 34.198.203.127/32
+  - 34.198.178.64/32
+  - 34.198.32.85/32
+component_version: 0.1.0
+component_name: acm
+template_name: acm
+template_version: latest
+description: acm@latest - v0.1.0
+lambda_metadata:
+  path:
+    CertificateValidatorCR: CertificateValidatorCR.acm.0.1.0.1548867245.zip
+  sha256:
+    CertificateValidatorCR: 0ymKoxUSw5HGLuSO+UmAMJTdHYdPs9dPqu3aoy4KG9w=
+  version:
+    CertificateValidatorCR: '1548867245'

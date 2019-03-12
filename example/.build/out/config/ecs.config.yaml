@@ -1,0 +1,61 @@
+---
+maximum_availability_zones: 5
+component_version: 0.1.0
+log_group_retention: 14
+enable_efs: false
+iam_policies:
+  ecs-container-instance:
+    action:
+    - ecs:CreateCluster
+    - ecs:DeregisterContainerInstance
+    - ecs:DiscoverPollEndpoint
+    - ecs:Poll
+    - ecs:RegisterContainerInstance
+    - ecs:StartTelemetrySession
+    - ecs:Submit*
+    - ecr:GetAuthorizationToken
+    - ecr:BatchCheckLayerAvailability
+    - ecr:GetDownloadUrlForLayer
+    - ecr:BatchGetImage
+    - logs:CreateLogStream
+    - logs:PutLogEvents
+  ecs-service-scheduler:
+    action:
+    - ec2:AuthorizeSecurityGroupIngress
+    - ec2:Describe*
+    - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+    - elasticloadbalancing:DeregisterTargets
+    - elasticloadbalancing:Describe*
+    - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+    - elasticloadbalancing:RegisterTargets
+nested_component: true
+ip_blocks:
+  ciinabox:
+  - 127.0.0.1/32
+  internal:
+  - stack
+  webhooks:
+  - 104.192.143.192/28
+  - 104.192.143.208/28
+  - 104.192.136.0/21
+  - 34.198.203.127/32
+  - 34.198.178.64/32
+  - 34.198.32.85/32
+component_name: ecs
+template_name: ecs
+template_version: master.snapshot
+mappings:
+  AccountId:
+    '000000000000':
+      KeyName: key
+      DnsDomain: example.tld
+  EnvironmentType:
+    development:
+      EcsInstanceType: t2.micro
+      EcsAsgMin: 1
+      EcsAsgMax: 2
+    production:
+      EcsInstanceType: t2.micro
+      EcsAsgMin: 1
+      EcsAsgMax: 2
+description: ecs@master.snapshot - v0.1.0

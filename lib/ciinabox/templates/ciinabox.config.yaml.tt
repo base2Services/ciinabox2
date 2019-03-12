@@ -1,0 +1,9 @@
+##Ciinabox configuration
+
+ciinabox_name: <%= config[:setup][:ciinabox_name] %>
+ciinabox_version: <%= config[:setup][:version] %>
+
+aws_account: <%= config[:setup][:aws_account_id] %>
+aws_region: <%= config[:setup][:aws_region] %>
+
+source_bucket: <%= config[:setup][:ciinabox_source_bucket] %>

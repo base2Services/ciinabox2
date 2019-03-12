@@ -1,0 +1,197 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Conditions:
+  LocalNSRecords:
+    Fn::And:
+    - Fn::Equals:
+      - Ref: AddNSRecords
+      - 'true'
+    - Fn::Equals:
+      - Ref: ParentIAMRole
+      - ''
+  RemoteNSRecords:
+    Fn::And:
+    - Fn::Equals:
+      - Ref: AddNSRecords
+      - 'true'
+    - Fn::Not:
+      - Fn::Equals:
+        - Ref: ParentIAMRole
+        - ''
+  CreateZone:
+    Fn::Equals:
+    - Ref: CreateZone
+    - 'true'
+Resources:
+  HostedZone:
+    Condition: CreateZone
+    Properties:
+      Name:
+        Fn::Join:
+        - "."
+        - - Ref: EnvironmentName
+          - Ref: RootDomainName
+      HostedZoneConfig:
+        Comment:
+          Fn::Sub: Hosted Zone for ${EnvironmentName}
+      HostedZoneTags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentName
+      - Key: EnvironmentType
+        Value:
+          Ref: EnvironmentType
+    Type: AWS::Route53::HostedZone
+  DomainNameZoneNSRecords:
+    Condition: RemoteNSRecords
+    Type: Custom::Route53ZoneNSRecords
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - Route53ZoneCR
+        - Arn
+      AwsRegion:
+        Ref: AWS::Region
+      RootDomainName:
+        Ref: RootDomainName
+      DomainName:
+        Fn::Join:
+        - "."
+        - - Ref: EnvironmentName
+          - Ref: RootDomainName
+      NSRecords:
+        Fn::GetAtt:
+        - HostedZone
+        - NameServers
+      ParentIAMRole:
+        Ref: ParentIAMRole
+  NSRecords:
+    Condition: LocalNSRecords
+    Properties:
+      HostedZoneName:
+        Ref: RootDomainName
+      Comment:
+        Fn::Join:
+        - ''
+        - - Fn::Sub: "${EnvironmentName} - NS Records for ${EnvironmentName}."
+          - Ref: RootDomainName
+      Name:
+        Fn::Join:
+        - "."
+        - - Ref: EnvironmentName
+          - Ref: RootDomainName
+      Type: NS
+      TTL: 60
+      ResourceRecords:
+        Fn::GetAtt:
+        - HostedZone
+        - NameServers
+    Type: AWS::Route53::RecordSet
+  LambdaRoleRoute53ZoneResource:
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: cloudwatch-logs
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - logs:DescribeLogStreams
+            - logs:DescribeLogGroups
+            Resource:
+            - arn:aws:logs:*:*:*
+      - PolicyName: route53
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - route53:*
+            Resource: "*"
+      - PolicyName: opsdns
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - sts:AssumeRole
+            Resource:
+            - Fn::If:
+              - RemoteNSRecords
+              - Ref: ParentIAMRole
+              - arn:aws:iam::123456789012:user/noaccess
+    Type: AWS::IAM::Role
+  Route53ZoneCR:
+    Properties:
+      Code:
+        S3Bucket: 855280047356.ap-southeast-2.ciinabox
+        S3Key: cloudformation/ciinabox-example/0.1.0/Route53ZoneCR.dnszone.0.1.0.1548867245.zip
+      Environment:
+        Variables:
+          ENVIRONMENT_NAME:
+            Ref: EnvironmentName
+      Handler: route53_zone_cr.handler
+      MemorySize: 128
+      Role:
+        Fn::GetAtt:
+        - LambdaRoleRoute53ZoneResource
+        - Arn
+      Runtime: python3.6
+      Timeout: 600
+    Type: AWS::Lambda::Function
+  Route53ZoneCRVersion1548867245:
+    DeletionPolicy: Retain
+    Properties:
+      FunctionName:
+        Ref: Route53ZoneCR
+      CodeSha256: ZM+cK6PDbjVEuFRea/DU6q5kwBqXHMAv9DqyTjLx1ao=
+    Type: AWS::Lambda::Version
+Outputs:
+  DnsDomainZoneId:
+    Condition: CreateZone
+    Value:
+      Ref: HostedZone
+  CfTemplateUrl:
+    Value: https://855280047356.ap-southeast-2.ciinabox.s3.amazonaws.com/cloudformation/ciinabox-example/0.1.0/route53-zone.compiled.yaml
+  CfTemplateVersion:
+    Value: 0.1.0
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    NoEcho: false
+  EnvironmentType:
+    Type: String
+    Default: development
+    NoEcho: false
+  CreateZone:
+    Type: String
+    Default: 'false'
+    NoEcho: false
+    AllowedValues:
+    - 'true'
+    - 'false'
+  RootDomainName:
+    Type: String
+    Default: ''
+    NoEcho: false
+  AddNSRecords:
+    Type: String
+    Default: 'false'
+    NoEcho: false
+    AllowedValues:
+    - 'true'
+    - 'false'
+  ParentIAMRole:
+    Type: String
+    Default: ''
+    NoEcho: false
+Description: dnszone - v0.1.0 (route53-zone@1.0.2)

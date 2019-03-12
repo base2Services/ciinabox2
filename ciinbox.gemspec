@@ -31,6 +31,10 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "thor", "~> 0.19"
+  spec.add_dependency 'cfhighlander', '~>0.6', '<1'
+  spec.add_runtime_dependency 'aws-sdk-core', '~> 3','<4'
+  spec.add_runtime_dependency 'aws-sdk-s3', '~> 1', '<2'
+  spec.add_runtime_dependency 'aws-sdk-cloudformation', '~> 1', '<2'
 
   spec.add_development_dependency "bundler", "~> 1.16"
   spec.add_development_dependency "rake", "~> 10.0"

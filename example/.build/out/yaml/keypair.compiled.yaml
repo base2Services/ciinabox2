@@ -1,0 +1,99 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  KeyPair:
+    Type: Custom::KeyPair
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - KeyPairCR
+        - Arn
+      Region:
+        Ref: AWS::Region
+      KeyPairName:
+        Ref: KeyPairName
+      SSMParameterPath:
+        Ref: SSMParameterPath
+  LambdaRoleKeyPairResource:
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: cloudwatch-logs
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - logs:DescribeLogStreams
+            - logs:DescribeLogGroups
+            Resource:
+            - arn:aws:logs:*:*:*
+      - PolicyName: keypair
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - ec2:CreateKeyPair
+            - ec2:DeleteKeyPair
+            - ssm:PutParameter
+            - ssm:DeleteParameter
+            Resource: "*"
+      - PolicyName: lambda
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource:
+              Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-KeyPairCR*
+    Type: AWS::IAM::Role
+  KeyPairCR:
+    Properties:
+      Code:
+        S3Bucket: 855280047356.ap-southeast-2.ciinabox
+        S3Key: cloudformation/ciinabox-example/0.1.0/KeyPairCR.keypair.0.1.0.1548867245.zip
+      Environment:
+        Variables: {}
+      Handler: cr_keypair.handler
+      MemorySize: 128
+      Role:
+        Fn::GetAtt:
+        - LambdaRoleKeyPairResource
+        - Arn
+      Runtime: python3.6
+      Timeout: 600
+    Type: AWS::Lambda::Function
+  KeyPairCRVersion1548867245:
+    DeletionPolicy: Retain
+    Properties:
+      FunctionName:
+        Ref: KeyPairCR
+      CodeSha256: Xy8qOVipaZpJVW0JbMLglofibZzedDrT08l7P42I8qc=
+    Type: AWS::Lambda::Version
+Outputs:
+  KeyPair:
+    Value:
+      Ref: KeyPair
+  CfTemplateUrl:
+    Value: https://855280047356.ap-southeast-2.ciinabox.s3.amazonaws.com/cloudformation/ciinabox-example/0.1.0/keypair.compiled.yaml
+  CfTemplateVersion:
+    Value: 0.1.0
+Parameters:
+  KeyPairName:
+    Type: String
+    Default: ''
+    NoEcho: false
+  SSMParameterPath:
+    Type: String
+    Default: ''
+    NoEcho: false
+Description: keypair@latest - v0.1.0
