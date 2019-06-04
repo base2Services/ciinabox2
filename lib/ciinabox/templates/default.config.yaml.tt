@@ -2,15 +2,11 @@
 
 maximum_availability_zones: 5
 
-manage_ns_records: true
-
 stack_octet: 150
 
 ecs_instance_type: t2.small
 
 ip_blocks:
-  ciinabox:
-    - 127.0.0.1/32
   internal:
     - stack
   webhooks:
@@ -21,77 +17,138 @@ ip_blocks:
     - 34.198.178.64/32 #bitbucket outbound for hook
     - 34.198.32.85/32 #bitbucket outbound for hook
 
-components:
-  vpc:
-    config:
-      manage_ns_records: true
-      subnets:
-        vpc_public:
-          allocation: 0
-          name: Public
-          type: public
-        compute:
-          allocation: 1
-          name: Compute
-          type: private
-  alb:
-    config:
-      records:
-        - "*"
-      securityGroups:
-        loadbalancer:
+vpc:
+  manage_ns_records: true
+  subnets:
+    vpc_public:
+      allocation: 0
+      name: Public
+      type: public
+    compute:
+      allocation: 1
+      name: Compute
+      type: private
+
+ecs:
+  enable_efs: true
+
+loadbalancer:
+  records:
+    - "*"
+  securityGroups:
+    loadbalancer:
+      -
+        rules:
           -
-            rules:
-              -
-                IpProtocol: tcp
-                FromPort: 443
-                ToPort: 443
-              -
-                IpProtocol: tcp
-                FromPort: 80
-                ToPort: 80
-            ips:
-              - ciinabox
-              - internal
-              - webhooks
-      listeners:
-        http:
-          port: 80
-          protocol: http
-          default_targetgroup: default
-        https:
-          port: 443
-          protocol: https
-          default_targetgroup: default
-          ssl_policy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06 #
-  ciinabox-web:
-    config:
-      health_check_grace_period: 20
-      cpu: 128
-      memory: 128
-      task_definition:
-        ciinabox:
-          image: nginx
-          tag_param: Version
-          tag_param_default: latest
-          env_vars:
-            ENVIRONMENT_NAME:
-              Fn::Sub: ${EnvironmentName}
-            AWS_REGION: 
-              Fn::Sub: ${AWS::Region}
-          ports:
-            - 80
-      targetgroup:
-        name: default
-        container: ciinabox
-        port: 80
-      iam_policies:
-        ssm:
-          action:
-            - ssm:GetParameters*
-          resource:
-            - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:ciinabox
-            - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:ciinabox/*
+            IpProtocol: tcp
+            FromPort: 443
+            ToPort: 443
+          -
+            IpProtocol: tcp
+            FromPort: 80
+            ToPort: 80
+        ips:
+          - webhooks
+  listeners:
+    http:
+      port: 80
+      protocol: http
+      default_targetgroup: default
+    https:
+      port: 443
+      protocol: https
+      default_targetgroup: default
+      ssl_policy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06 #
+
+jenkins:
+  network_mode: awsvpc
+  health_check_grace_period: 20
+  cpu: 1024
+  memory: 1536
+  volumes:
+    - jenkins-data:/efs/jenkins
+    - docker-socket:/var/run/docker.sock
+  task_definition:
+    jenkins:
+      image: cloudbees/cloudbees-jenkins-distribution
+      tag_param: Version
+      tag_param_default: latest
+      env_vars:
+        ENVIRONMENT_NAME:
+          Fn::Sub: ${EnvironmentName}
+        AWS_REGION:
+          Fn::Sub: ${AWS::Region}
+      ports:
+        - 8080
+        - 50000
+      mounts:
+        - /var/jenkins_home:jenkins-data
+        - /var/run/docker.sock:docker-socket
+  targetgroup:
+    name: jenkins
+    container: jenkins
+    port: 8080
+    protocol: http
+    listener: https
+    type: ip
+    healthcheck:
+      interval: 30
+      timeout: 10
+      healthy_count: 2
+      unhealthy_count: 10
+      path: /login
+      code: 200
+    rules:
+      - name:  jenkins
+        host: jenkins.*
+        priority: 1000
+  iam_policies:
+    ecs-jenkins-plugin:
+      action:
+        - ecs:ListClusters
+        - ecs:DescribeContainerInstances
+        - ecs:RegisterTaskDefinition
+        - ecs:DeregisterTaskDefinition
+        - ecs:ListTaskDefinitions
+        - ecs:DescribeTaskDefinition
+        - ecs:RunTask
+        - ecs:StopTask
+        - ecs:ListContainerInstances
+        - ecs:DescribeTasks
+    ssm:
+      action:
+        - ssm:GetParameters*
+      resource:
+        - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:ciinabox/jenkins
+        - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:ciinabox/jenkins/*
+  securityGroups:
+    jenkins:
+      -
+        rules:
+          -
+            IpProtocol: tcp
+            FromPort: 8080
+            ToPort: 8080
+          -
+            IpProtocol: tcp
+            FromPort: 50000
+            ToPort: 50000
+        ips:
+          - stack
+
+agent:
+  network_mode: awsvpc
+  cpu: 512
+  memory: 1024
+  volumes:
+    - docker-socket:/var/run/docker.sock
+  task_definition:
+    jenkins:
+      image: guslington/jenkins-jnlp-ecs-docker
+      tag_param: Version
+      tag_param_default: latest
+      mounts:
+        - /var/run/docker.sock:docker-socket
 
 config_export:
   global:

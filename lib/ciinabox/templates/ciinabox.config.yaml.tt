@@ -6,4 +6,6 @@ ciinabox_version: <%= config[:setup][:version] %>
 aws_account: <%= config[:setup][:aws_account_id] %>
 aws_region: <%= config[:setup][:aws_region] %>
 
+root_domain: <%= config[:setup][:root_domain] %>
+
 source_bucket: <%= config[:setup][:ciinabox_source_bucket] %>

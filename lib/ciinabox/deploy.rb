@@ -4,7 +4,7 @@ require 'ciinabox/cfhighlander/stack'
 require 'yaml'
 
 module Ciinabox
-  class Create < Thor::Group
+  class Deploy < Thor::Group
     include Thor::Actions
 
     argument :name
@@ -17,7 +17,7 @@ module Ciinabox
     end
 
     def load_config
-      @build_dir = '.build/'
+      @build_dir = '.build'
       @ciinabox_config = "#{name}.ciinabox.yaml"
       @ciinabox = YAML.load(File.read(@ciinabox_config))
       puts "#{@ciinabox}"
@@ -28,10 +28,10 @@ module Ciinabox
     def generate_cfhiglander_stack
       remove_dir @build_dir
       empty_directory @build_dir
-      template('templates/ciinabox.cfhighlander.rb.tt', "#{@build_dir}/ciinabox-#{name}.cfhighlander.rb")
-      template('templates/default.config.yaml.tt', "#{@build_dir}/ciinabox-#{name}.config.yaml")
+      template('templates/ciinabox.cfhighlander.rb.tt', "#{@build_dir}/#{name}.cfhighlander.rb")
+      template('templates/default.config.yaml.tt', "#{@build_dir}/#{name}.config.yaml")
       cf_stack = Ciinabox::CfHiglander::Stack.new(@ciinabox, @build_dir)
-      cf_stack.create()
+      cf_stack.deploy()
     end
 
   end
