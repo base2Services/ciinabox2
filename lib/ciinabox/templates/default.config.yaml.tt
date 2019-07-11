@@ -4,18 +4,11 @@ maximum_availability_zones: 5
 
 stack_octet: 150
 
-ecs_instance_type: t2.small
+ecs_instance_type: t2.large
 
 ip_blocks:
   internal:
     - stack
-  webhooks:
-    - 104.192.143.192/28 #github
-    - 104.192.143.208/28 #github
-    - 104.192.136.0/21 #bitbucket outbound for hook
-    - 34.198.203.127/32 #bitbucket outbound for hook
-    - 34.198.178.64/32 #bitbucket outbound for hook
-    - 34.198.32.85/32 #bitbucket outbound for hook
 
 vpc:
   manage_ns_records: true
@@ -29,8 +22,55 @@ vpc:
       name: Compute
       type: private
 
+# efs:
+#   name: /${EnvironmentName}-ciinabox
+#   create_mounts: false
+#   security_group_rules:
+#     - ip: ${VPCCidr}
+#       desc: ciinabox vpc access for nfs
+
 ecs:
-  enable_efs: true
+  security_groups:
+    - name: efs
+      from: 2049
+      cidrip:
+        Fn::Sub: ${VPCCidr}
+      desc: Allow EFS access from ECS tasks
+  enable_efs: false
+  cluster_name: ciinabox
+  iam_policies:
+    rexray-efs-plugin:
+      action:
+        - elasticfilesystem:CreateFileSystem
+        - elasticfilesystem:CreateMountTarget
+        - ec2:DescribeSubnets
+        - ec2:DescribeNetworkInterfaces
+        - ec2:CreateNetworkInterface
+        - elasticfilesystem:CreateTags
+        - elasticfilesystem:DeleteMountTarget
+        - ec2:DeleteNetworkInterface
+        - elasticfilesystem:DescribeFileSystems
+        - elasticfilesystem:DescribeMountTargets
+        - elasticfilesystem:DeleteMountTarget
+    ssm-ssh-access:
+      action:
+        - ssm:UpdateInstanceInformation
+        - ssmmessages:CreateControlChannel
+        - ssmmessages:CreateDataChannel
+        - ssmmessages:OpenControlChannel
+        - ssmmessages:OpenDataChannel
+  instance_tags:
+    Name: ${EnvironmentName}-ciinabox-ecs-xx
+  userdata: |
+    INSTANCE_ID=$(/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}')
+    hostname ${EnvironmentName}-ecs-${!INSTANCE_ID}
+    sed '/HOSTNAME/d' /etc/sysconfig/network > /tmp/network && mv -f /tmp/network /etc/sysconfig/network && echo "HOSTNAME=${EnvironmentName}-ecs-${!INSTANCE_ID}" >>/etc/sysconfig/network && /etc/init.d/network restart
+    echo ECS_CLUSTER=${EcsCluster} >> /etc/ecs/ecs.config
+    yum install -y amazon-efs-utils nfs-utils amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+    docker plugin install rexray/efs REXRAY_PREEMPT=true EFS_REGION=${AWS::Region} EFS_SECURITYGROUPS=${SecurityGroupEcs} --grant-all-permissions
+    systemctl restart docker
+
 
 loadbalancer:
   records:
@@ -49,6 +89,8 @@ loadbalancer:
             ToPort: 80
         ips:
           - webhooks
+          - whitelist
+
   listeners:
     http:
       port: 80
@@ -62,12 +104,18 @@ loadbalancer:
 
 jenkins:
   network_mode: awsvpc
-  health_check_grace_period: 20
+  health_check_grace_period: 120
   cpu: 1024
-  memory: 1536
+  memory: 2048
   volumes:
-    - jenkins-data:/efs/jenkins
+    # - jenkins-data:/efs/jenkins
     - docker-socket:/var/run/docker.sock
+    - Name:
+        Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-master
+      DockerVolumeConfiguration:
+        Driver: rexray/efs
+        Scope: shared
+        Autoprovision: true
   task_definition:
     jenkins:
       image: cloudbees/cloudbees-jenkins-distribution
@@ -78,12 +126,18 @@ jenkins:
           Fn::Sub: ${EnvironmentName}
         AWS_REGION:
           Fn::Sub: ${AWS::Region}
+        CASC_JENKINS_CONFIG:
+          Fn::Sub: https://s3-${AWS::Region}.amazonaws.com/${S3Bucket}/jenkins/jenkins.yaml
       ports:
         - 8080
         - 50000
       mounts:
-        - /var/jenkins_home:jenkins-data
+        # - /var/jenkins_home:jenkins-data
         - /var/run/docker.sock:docker-socket
+        - ContainerPath: /var/jenkins_home
+          SourceVolume:
+            Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-master
+          ReadOnly: false
   targetgroup:
     name: jenkins
     container: jenkins
@@ -102,7 +156,12 @@ jenkins:
       - name:  jenkins
         host: jenkins.*
         priority: 1000
+    attributes:
+      deregistration_delay.timeout_seconds: 10
   iam_policies:
+    iam-assume-role:
+      action:
+        - iam:PassRole
     ecs-jenkins-plugin:
       action:
         - ecs:ListClusters
@@ -115,12 +174,23 @@ jenkins:
         - ecs:StopTask
         - ecs:ListContainerInstances
         - ecs:DescribeTasks
-    ssm:
+    s3-list-ciinabox-bucket:
       action:
-        - ssm:GetParameters*
+        - s3:ListBucket
       resource:
-        - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:ciinabox/jenkins
-        - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:ciinabox/jenkins/*
+        - Fn::Sub: arn:aws:s3:::${S3Bucket}
+    s3-rw:
+      action:
+        - s3:GetObject
+        - s3:GetObjectAcl
+        - s3:GetObjectVersion
+        - s3:PutObject
+        - s3:PutObjectAcl
+      resource:
+        - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+  service_discovery:
+    name: jenkins
+    container_name: jenkins
   securityGroups:
     jenkins:
       -
@@ -140,15 +210,42 @@ agent:
   network_mode: awsvpc
   cpu: 512
   memory: 1024
+  tags:
+    ciinabox:agent:label: docker
   volumes:
     - docker-socket:/var/run/docker.sock
+    # - Name:
+    #     Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-workspaces
+    #   DockerVolumeConfiguration:
+    #     Driver: rexray/efs
+    #     Scope: shared
+    #     Autoprovision: true
   task_definition:
     jenkins:
       image: guslington/jenkins-jnlp-ecs-docker
-      tag_param: Version
-      tag_param_default: latest
+      # env_vars:
+      #   JENKINS_AGENT_WORKDIR: /home/jenkins/agent
       mounts:
         - /var/run/docker.sock:docker-socket
+        # - ContainerPath: /home/jenkins/agent
+        #   SourceVolume:
+        #     Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-workspaces
+        #   ReadOnly: false
+  iam_policies:
+    s3-list-ciinabox-bucket:
+      action:
+        - s3:ListBucket
+      resource:
+        - Fn::Sub: arn:aws:s3:::${S3Bucket}
+    s3-rw-ciinabox-bucket:
+      action:
+        - s3:GetObject
+        - s3:GetObjectAcl
+        - s3:GetObjectVersion
+        - s3:PutObject
+        - s3:PutObjectAcl
+      resource:
+        - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
 
 config_export:
   global:

@@ -9,3 +9,16 @@ aws_region: <%= config[:setup][:aws_region] %>
 root_domain: <%= config[:setup][:root_domain] %>
 
 source_bucket: <%= config[:setup][:ciinabox_source_bucket] %>
+
+ip_blocks:
+  webhooks:
+    - 104.192.143.192/28 #github
+    - 104.192.143.208/28 #github
+    - 104.192.136.0/21 #bitbucket outbound for hook
+    - 34.198.203.127/32 #bitbucket outbound for hook
+    - 34.198.178.64/32 #bitbucket outbound for hook
+    - 34.198.32.85/32 #bitbucket outbound for hook
+  whitelist:
+    <%- config[:setup][:ip_whitelist].each do |ip|%>
+    - <%= ip %>
+    <%- end %>

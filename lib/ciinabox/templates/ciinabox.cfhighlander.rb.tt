@@ -5,11 +5,11 @@ CfhighlanderTemplate do
 
   Parameters do
     ComponentParam 'CiinaboxAmi', '/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id', type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    ComponentParam 'EnvironmentName', component_name
+    ComponentParam 'EnvironmentType', 'development'
   end
 
   Component template: 'vpc@2.0.0', name: 'vpc', config: vpc do
-    parameter name: 'EnvironmentName', value: "#{component_name}"
-    parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'NetworkPrefix', value: '10'
     parameter name: 'StackOctet', value: "#{stack_octet}"
     parameter name: 'StackMask', value: '16'
@@ -24,15 +24,11 @@ CfhighlanderTemplate do
   end
 
   Component template: 'acm', name: 'acm' do
-    parameter name: 'EnvironmentName', value: "#{component_name}"
-    parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DomainName', value: "*.#{component_name}.#{root_domain}"
     parameter name: 'CrossAccountDNSZoneIAMRole', value: ''
   end
 
   Component template: 'github:guslington/hl-component-loadbalancer#develop.snapshot', name: 'loadbalancer', config: loadbalancer do
-    parameter name: 'EnvironmentName', value: "#{component_name}"
-    parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
     parameter name: 'SslCertId', value: 'acm.CertificateArn'
     parameter name: 'StackOctet', value: "#{stack_octet}"
@@ -44,17 +40,16 @@ CfhighlanderTemplate do
     parameter name: 'SSMParameterPath', value: "/ciinabox/keypair"
   end
 
-  Component template: 'github:guslington/hl-component-efs#develop.snapshot', name: 'efs' do
-    parameter name: 'EnvironmentName', value: "#{component_name}"
-    parameter name: 'EnvironmentType', value: 'development'
-    maximum_availability_zones.times do |az|
-      parameter name: "SubnetPersistence#{az}", value: cfout("vpc.SubnetPersistence#{az}")
-    end
-  end
+#  Component template: 'github:guslington/hl-component-efs#develop.snapshot', name: 'efs', config: efs do
+#    parameter name: 'EnvironmentName', value: "#{component_name}"
+#    parameter name: 'EnvironmentType', value: 'development'
+#    parameter name: 'SubnetIds', value: cfout("vpc.PersistenceSubnets")
+#    parameter name: 'VPCCidr', value: cfout("vpc.VPCCidr")
+#  end
 
-  Component template: 'ecs@2.0.0', name: 'ecs', config: ecs do
-    parameter name: 'EnvironmentName', value: "#{component_name}"
-    parameter name: 'EnvironmentType', value: 'development'
+  Component template: 'service-discovery@0.1.0', name: 'servicediscovery', config: { namespace: "${EnvironmentName}.ciinabox" }
+
+  Component template: 'github:guslington/hl-component-ecs#develop.snapshot', name: 'ecs', config: ecs do
     parameter name: 'StackOctet', value: "#{stack_octet}"
     parameter name: 'KeyName', value: cfout('keypair.KeyPair')
     parameter name: 'DnsDomain', value:"#{root_domain}"
@@ -65,12 +60,13 @@ CfhighlanderTemplate do
     parameter name: 'SecurityGroupBastion', value: 'loadbalancer.SecurityGroupLoadBalancer'
     parameter name: 'SecurityGroupLoadBalancer', value: 'loadbalancer.SecurityGroupLoadBalancer'
     parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
-    parameter name: 'FileSystem', value: cfout('efs.FileSystem')
+    parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
+    parameter name: 'AsgDesired', value: 1
+    parameter name: 'EnableScaling', value: 'false'
+    parameter name: 'SpotPrice', value: ''
   end
 
   Component template: 'github:guslington/hl-component-ecs-service#develop.snapshot', name: 'jenkins', config: jenkins do
-    parameter name: 'EnvironmentName', value: "#{component_name}"
-    parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'LoadBalancer', value: 'loadbalancer.LoadBalancer'
     parameter name: 'TargetGroup', value: 'loadbalancer.defaultTargetGroup'
     parameter name: 'Listener', value: 'loadbalancer.httpsListener'
@@ -81,11 +77,13 @@ CfhighlanderTemplate do
     parameter name: 'DnsDomain', value: "#{root_domain}"
     parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
     parameter name: 'StackOctet', value: "#{stack_octet}"
+    parameter name: 'NamespaceId', value: cfout('servicediscovery.NamespaceId')
+    parameter name: 'S3Bucket', value: "#{source_bucket}"
+    parameter name: 'jenkinsVersion', value: "#{jenkins_version}"
   end
 
-  Component template: 'ecs-task', name: 'agent', config: agent do
-    parameter name: 'EnvironmentName', value: "#{component_name}"
-    parameter name: 'EnvironmentType', value: 'development'
+  Component template: 'github:guslington/hl-component-ecs-task#master.snapshot', name: 'docker-agent', config: agent do
+    parameter name: 'S3Bucket', value: "#{source_bucket}"
   end
 
 end

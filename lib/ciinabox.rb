@@ -2,6 +2,9 @@ require 'thor'
 require 'ciinabox/version'
 require 'ciinabox/init'
 require 'ciinabox/deploy'
+require 'ciinabox/instances'
+require 'ciinabox/services'
+require 'ciinabox/agents'
 
 module Ciinabox
   class Cli < Thor
@@ -18,6 +21,15 @@ module Ciinabox
 
     register Ciinabox::Deploy, 'deploy', 'deploy [name]', 'Ciinabox base stack creation'
     tasks["deploy"].options = Ciinabox::Deploy.class_options
+
+    register Ciinabox::Instances, 'instances', 'instances [name]', 'describe the ciinabox ECS cluster instances'
+    tasks["instances"].options = Ciinabox::Instances.class_options
+
+    register Ciinabox::Services, 'services', 'services [name]', 'describe ciinabox deployed services'
+    tasks["services"].options = Ciinabox::Services.class_options
+
+    register Ciinabox::Agents, 'agents', 'agents [name]', 'describe ciinabox available ECS agents'
+    tasks["agents"].options = Ciinabox::Agents.class_options
 
   end
 
