@@ -1,0 +1,34 @@
+jenkins:
+  clouds:
+  - eC2Fleet:
+      addNodeOnlyIfRunning: false
+      alwaysReconnect: false
+      computerConnector:
+        sSHConnector:
+          credentialsId: "ec2-fleet"
+          launchTimeoutSeconds: 60000
+          maxNumRetries: 0
+          port: 22
+          retryWaitTime: 0
+          sshHostKeyVerificationStrategy: "nonVerifyingKeyVerificationStrategy"
+      disableTaskResubmit: false
+      fleet: "REPLACE FLEET ID HERE"
+      idleMinutes: 15
+      initOnlineCheckIntervalSec: 15
+      initOnlineTimeoutSec: 180
+      labelString: "ec2-fleet"
+      maxSize: 2
+      minSize: 0
+      name: "ec2-fleet"
+      numExecutors: 8
+      oldId: "db755530-592c-4f8d-b7ea-ba3fcbfa3122"
+      privateIpUsed: true
+      region: "<%= @region %>"
+      restrictUsage: false
+      scaleExecutorsByWeight: false
+  systemMessage: |
+    Authorized access only! 
+    Disconnect IMMEDIATELY if you are not an authorized user!!!
+    All actions Will be monitored and recorded
+  numExecutors: 0
+  

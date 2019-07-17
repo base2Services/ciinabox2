@@ -33,13 +33,9 @@ module Ciinabox
       change_set_name = "#{@stack_name}-#{Ciinabox::CHANGE_SET_VERSION}-#{Time.now.utc.strftime("%Y%m%d%H%M%S")}"
       change_set_type = get_change_set_type()
 
-      if change_set_type == 'CREATE'
-        params = get_parameters_from_template(template_url)
-      else
-        params = get_parameters_from_stack()
-      end
+      template_params = get_parameters_from_template(template_url)
 
-      params.each do |param|
+      template_params.each do |param|
         if !parameters[param[:parameter_key]].nil?
           param['parameter_value'] = parameters[param[:parameter_key]]
           param['use_previous_value'] = false
@@ -47,11 +43,11 @@ module Ciinabox
       end
 
       Log.logger.debug "Creating changeset"
-      Log.logger.debug "Changeset parameters:\n #{params}"
+      Log.logger.debug "Changeset parameters:\n #{template_params}"
       change_set = @client.create_change_set({
         stack_name: @stack_name,
         template_url: template_url,
-        parameters: params,
+        parameters: template_params,
         capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
         tags: [
           {
@@ -96,8 +92,12 @@ module Ciinabox
     def wait_for_execute(change_set_type)
       waiter = change_set_type == 'CREATE' ? :stack_create_complete : :stack_update_complete
       Log.logger.debug "Waiting for changeset to #{change_set_type}"
-      resp = @client.wait_until waiter, stack_name: @stack_name
-      Log.logger.debug "Changeset #{change_set_type} complete"
+      begin
+        resp = @client.wait_until waiter, stack_name: @stack_name
+        Log.logger.debug "Changeset #{change_set_type} complete"
+      rescue Aws::Waiters::Errors::FailureStateError => e
+        Log.logger.error "Changeset #{change_set_type} failed with error: #{e.message}"
+      end
     end
 
     def get_parameters_from_stack()
@@ -108,6 +108,10 @@ module Ciinabox
     def get_parameters_from_template(template_url)
       resp = @client.get_template_summary({ template_url: template_url })
       return resp.parameters.collect { |p| { parameter_key: p.parameter_key, parameter_value: p.default_value }  }
+    end
+    
+    def get_stack_errors()
+      
     end
 
   end

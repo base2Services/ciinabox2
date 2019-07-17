@@ -5,6 +5,9 @@ require 'ciinabox/deploy'
 require 'ciinabox/instances'
 require 'ciinabox/services'
 require 'ciinabox/agents'
+require 'ciinabox/fleets'
+require 'ciinabox/bucket_policy'
+require 'ciinabox/jenkins_config'
 
 module Ciinabox
   class Cli < Thor
@@ -30,7 +33,16 @@ module Ciinabox
 
     register Ciinabox::Agents, 'agents', 'agents [name]', 'describe ciinabox available ECS agents'
     tasks["agents"].options = Ciinabox::Agents.class_options
+    
+    register Ciinabox::Fleets, 'fleets', 'fleets [name]', 'describe ciinabox spot fleet requests'
+    tasks["fleets"].options = Ciinabox::Fleets.class_options
+    
+    register Ciinabox::BucketPolicy, 'bucket_policy', 'bucket-policy [name]', 'do things with the bucket'
+    tasks["bucket_policy"].options = Ciinabox::BucketPolicy.class_options
 
+    register Ciinabox::JenkinsConfig, 'jenkins_config', 'jenkins-config [name]', 'upload the jenkins casc yaml config file to s3'
+    tasks["jenkins_config"].options = Ciinabox::JenkinsConfig.class_options
+    
   end
 
   Aws.config[:retry_limit] = if ENV.key? 'CIINABOX_AWS_RETRY_LIMIT' then (ENV['CIINABOX_AWS_RETRY_LIMIT'].to_i) else 10 end

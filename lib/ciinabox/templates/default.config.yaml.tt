@@ -1,10 +1,10 @@
 ## ciinabox cfhighlander default config
 
-maximum_availability_zones: 5
+maximum_availability_zones: 3
 
-stack_octet: 150
+stack_octet: 50
 
-ecs_instance_type: t2.large
+ecs_instance_type: t2.small
 
 ip_blocks:
   internal:
@@ -55,12 +55,16 @@ ecs:
     ssm-ssh-access:
       action:
         - ssm:UpdateInstanceInformation
+        - ssm:ListInstanceAssociations
+        - ec2messages:GetMessages
         - ssmmessages:CreateControlChannel
         - ssmmessages:CreateDataChannel
         - ssmmessages:OpenControlChannel
         - ssmmessages:OpenDataChannel
   instance_tags:
     Name: ${EnvironmentName}-ciinabox-ecs-xx
+    ciinabox:jenkins:label: master
+    ciinabox:jenkins:type: master
   userdata: |
     INSTANCE_ID=$(/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}')
     hostname ${EnvironmentName}-ecs-${!INSTANCE_ID}
@@ -106,9 +110,8 @@ jenkins:
   network_mode: awsvpc
   health_check_grace_period: 120
   cpu: 1024
-  memory: 2048
+  memory: 1536
   volumes:
-    # - jenkins-data:/efs/jenkins
     - docker-socket:/var/run/docker.sock
     - Name:
         Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-master
@@ -127,12 +130,11 @@ jenkins:
         AWS_REGION:
           Fn::Sub: ${AWS::Region}
         CASC_JENKINS_CONFIG:
-          Fn::Sub: https://s3-${AWS::Region}.amazonaws.com/${S3Bucket}/jenkins/jenkins.yaml
+          Fn::Sub: https://s3-${AWS::Region}.amazonaws.com/${S3Bucket}/${EnvironmentName}/jenkins/jenkins.yaml
       ports:
         - 8080
         - 50000
       mounts:
-        # - /var/jenkins_home:jenkins-data
         - /var/run/docker.sock:docker-socket
         - ContainerPath: /var/jenkins_home
           SourceVolume:
@@ -159,9 +161,11 @@ jenkins:
     attributes:
       deregistration_delay.timeout_seconds: 10
   iam_policies:
-    iam-assume-role:
+    iam-pass-role:
       action:
+        - iam:ListRoles
         - iam:PassRole
+        - iam:ListInstanceProfiles
     ecs-jenkins-plugin:
       action:
         - ecs:ListClusters
@@ -174,6 +178,9 @@ jenkins:
         - ecs:StopTask
         - ecs:ListContainerInstances
         - ecs:DescribeTasks
+    ec2-fleet-plugin:
+      action:
+        - ec2:*
     s3-list-ciinabox-bucket:
       action:
         - s3:ListBucket
@@ -206,32 +213,32 @@ jenkins:
         ips:
           - stack
 
-agent:
-  network_mode: awsvpc
-  cpu: 512
-  memory: 1024
-  tags:
-    ciinabox:agent:label: docker
-  volumes:
-    - docker-socket:/var/run/docker.sock
-    # - Name:
-    #     Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-workspaces
-    #   DockerVolumeConfiguration:
-    #     Driver: rexray/efs
-    #     Scope: shared
-    #     Autoprovision: true
-  task_definition:
-    jenkins:
-      image: guslington/jenkins-jnlp-ecs-docker
-      # env_vars:
-      #   JENKINS_AGENT_WORKDIR: /home/jenkins/agent
-      mounts:
-        - /var/run/docker.sock:docker-socket
-        # - ContainerPath: /home/jenkins/agent
-        #   SourceVolume:
-        #     Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-workspaces
-        #   ReadOnly: false
+ec2_agent:
+  name: ${EnvironmentName}-ciinabox-ec2-agent
+  security_groups:
+    - name: ssh
+      from: 22
+      cidrip:
+        Fn::Sub: ${VPCCidr}
+      desc: Allow Jenkins master to connect to the ec2 agents
+  maximum_availability_zones: 3
+  enable_efs: false
+  instance_tags:
+    Name: ${EnvironmentName}-ciinabox-agent-xx
+    ciinabox:name: ${EnvironmentName}
+    ciinabox:jenkins:label: ec2-agent
+    ciinabox:jenkins:type: agent
+    ciinabox:jenkins:spot-fleet: ec2-agent
   iam_policies:
+    ssm-ssh-access:
+      action:
+        - ssm:UpdateInstanceInformation
+        - ssm:ListInstanceAssociations
+        - ec2messages:GetMessages
+        - ssmmessages:CreateControlChannel
+        - ssmmessages:CreateDataChannel
+        - ssmmessages:OpenControlChannel
+        - ssmmessages:OpenDataChannel
     s3-list-ciinabox-bucket:
       action:
         - s3:ListBucket
@@ -246,6 +253,14 @@ agent:
         - s3:PutObjectAcl
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+  userdata: |
+    INSTANCE_ID=$(/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}')
+    hostnamectl set-hostname ${!INSTANCE_ID}.${EnvironmentName}.ciinabox
+    systemctl restart network
+    yum install -y java-1.8.0 docker amazon-ssm-agent
+    usermod -a -G docker ec2-user
+    systemctl start amazon-ssm-agent
+    systemctl start docker
 
 config_export:
   global:

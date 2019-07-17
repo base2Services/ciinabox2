@@ -18,7 +18,7 @@ module Ciinabox
     def display
       headings = ['Name', 'Version', 'Task Definition', 'Type', 'CPU', 'Memory']
       rows = []
-
+    
       cluster = Ciinabox::Cluster.new(@name)
       agents = cluster.get_agents()
       agents.each do |t|
@@ -31,7 +31,7 @@ module Ciinabox
           t.task_definition.memory
         ])
       end
-
+    
       puts Terminal::Table.new(:headings => headings,:rows => rows)
     end
 

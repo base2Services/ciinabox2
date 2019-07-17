@@ -55,6 +55,11 @@ module Ciinabox
       opts = {setup: @setup}
       template('templates/ciinabox.config.yaml.tt', "#{@dir}/#{@name}.ciinabox.yaml", opts)
     end
+    
+    def create_jenkins_config
+      opts = { region: @options['region']}
+      template('templates/jenkins.yaml.tt', "jenkins.yaml", opts)
+    end
 
     def complete
       say "ciinabox init complete. run `cd #{@dir}` and `ciinabox deploy #{@name}` to launch the stack", :green
