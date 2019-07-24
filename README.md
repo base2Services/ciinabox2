@@ -36,7 +36,7 @@ $ ciinabox deploy myciinabox
 4. Retrieve the admin password
 
 ```bash
-$ ciinabox instances reference
+$ ciinabox instances myciinabox
 +---------------------+--------+-----------+-------+--------+------------+----------+---------------------------+
 | Instance Id         | Status | Connected | Tasks | Agent  | Docker     | Type     | Up Since                  |
 +---------------------+--------+-----------+-------+--------+------------+----------+---------------------------+
@@ -65,19 +65,41 @@ Go to the Jenkins url of https://jenkins.myciinabox.domain.tld and login as user
 Click through the wizard and complete
   - Registration
   - install plugins
+    - Blue Ocean
+    - pipeline: decretive
+    - pipeline
+    - pipeline: stage view
+    - ssh credentials
+    - credential binding
+    - scm api
+    - git
+    - git client
+    - github branch
+    - bitbucket branch
+    - junit
+
+7. S3 Bucket policy
+
+config the s3 bucket policy with your vpc endpoint
+
+```bash
+ciinabox bucket-policy myciinabox --update
+```
 
 7. Install more plugins
 
 Go to manage plugins and install
-  - Configuration as code
-  - EC2-Fleet
+  - configuration as code
+  - configuration as code support
+  - ec2-fleet
+  - job dsl
   
 8. Configure the Jcasc plugin
 
 retrieve the spot fleet id
 
 ```bash
-$ ciinabox fleets reference
+$ ciinabox fleets myciinabox
 +------------------------------------------+----------+-------------------------------+------------------------+-------------------------+
 | Id                                       | Capacity | Launch Template               | Fleet Template Version | Latest Template Version |
 +------------------------------------------+----------+-------------------------------+------------------------+-------------------------+
@@ -98,7 +120,7 @@ jenkins:
 and upload it
 
 ```bash
-$ ciinabox jenkins-config reference
+$ ciinabox jenkins-config myciinabox
 uploaded jenkins.yaml config file to s3://123456789012.ap-southeast-2.ciinabox/myciinabox/jenkins/jenkins.yaml
 Go to https://jenkins.myciinabox.domain.tld/configuration-as-code/ to apply the changes
 ```
