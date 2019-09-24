@@ -63,9 +63,15 @@ module Ciinabox
     def load_config()
       config_file = "#{@build_dir}/#{@name}.config.yaml"
       ciinabox_config = YAML.load(File.read(config_file))
-      ciinabox_config.merge!(@config)
-      return ciinabox_config
+      return ciinabox_config.deep_merge(@config)
     end
 
+  end
+end
+
+class ::Hash
+  def deep_merge(second)
+    merger = proc {|key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : Array === v1 && Array === v2 ? v1 | v2 : [:undefined, nil, :nil].include?(v2) ? v1 : v2}
+    self.merge(second.to_h, &merger)
   end
 end

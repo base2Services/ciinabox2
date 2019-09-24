@@ -32,15 +32,7 @@ module Ciinabox
     def create_change_set(template_url, parameters={})
       change_set_name = "#{@stack_name}-#{Ciinabox::CHANGE_SET_VERSION}-#{Time.now.utc.strftime("%Y%m%d%H%M%S")}"
       change_set_type = get_change_set_type()
-
       template_params = get_parameters_from_template(template_url)
-
-      template_params.each do |param|
-        if !parameters[param[:parameter_key]].nil?
-          param['parameter_value'] = parameters[param[:parameter_key]]
-          param['use_previous_value'] = false
-        end
-      end
 
       Log.logger.debug "Creating changeset"
       Log.logger.debug "Changeset parameters:\n #{template_params}"

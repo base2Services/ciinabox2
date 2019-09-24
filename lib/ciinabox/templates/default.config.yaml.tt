@@ -22,19 +22,10 @@ vpc:
       name: Compute
       type: private
 
-# efs:
-#   name: /${EnvironmentName}-ciinabox
-#   create_mounts: false
-#   security_group_rules:
-#     - ip: ${VPCCidr}
-#       desc: ciinabox vpc access for nfs
-
 ecs:
-  security_groups:
-    - name: efs
-      from: 2049
-      cidrip:
-        Fn::Sub: ${VPCCidr}
+  security_group_rules:
+    - from: 2049
+      ip: ${VPCCidr}
       desc: Allow EFS access from ECS tasks
   enable_efs: false
   cluster_name: ciinabox
@@ -77,40 +68,60 @@ ecs:
 
 
 loadbalancer:
+  loadbalancer_attributes:
+    idle_timeout.timeout_seconds: 300
+  
   records:
     - "*"
-  securityGroups:
-    loadbalancer:
-      -
-        rules:
-          -
-            IpProtocol: tcp
-            FromPort: 443
-            ToPort: 443
-          -
-            IpProtocol: tcp
-            FromPort: 80
-            ToPort: 80
-        ips:
-          - webhooks
-          - whitelist
-
+    
+  security_group_rules:
+    -
+      from: 80
+      ip_blocks:
+        - webhooks
+        - whitelist
+      desc: public HTTP access
+    -
+      from: 443
+      ip_blocks:
+        - webhooks
+        - whitelist
+      desc: public HTTPS access
+      
   listeners:
     http:
       port: 80
       protocol: http
-      default_targetgroup: default
+      default:
+        action:
+          redirect: http_to_https
     https:
       port: 443
       protocol: https
-      default_targetgroup: default
-      ssl_policy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06 #
+      ssl_policy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06
+      default:
+        certificate: website
+        action:
+          fixed:
+            type: text/html
+            code: 404
+            body: |
+              <!DOCTYPE html>
+              <html>
+                <body>
+                  <h2>404</h2>
+                  <h3><span id="demo" style="color: red"></span> ciinabox service not found</h3>
+                  <script>
+                  document.getElementById("demo").innerHTML = location.hostname;
+                  </script>
+                </body>
+              </html> 
+
+            
 
 jenkins:
   network_mode: awsvpc
   health_check_grace_period: 120
-  cpu: 1024
-  memory: 1536
   volumes:
     - docker-socket:/var/run/docker.sock
     - Name:
@@ -131,6 +142,12 @@ jenkins:
           Fn::Sub: ${AWS::Region}
         CASC_JENKINS_CONFIG:
           Fn::Sub: https://s3-${AWS::Region}.amazonaws.com/${S3Bucket}/${EnvironmentName}/jenkins/jenkins.yaml
+        JAVA_OPTS: 
+          Fn::Sub: >-
+            -Dcb.BeekeeperProp.noFullUpgrade=true
+            -Dcb.BeekeeperProp.disableIncrementalWizard=true
+            -Dhudson.TcpSlaveAgentListener.hostName=jenkins.${EnvironmentName}.ciinabox 
+            -Dhudson.TcpSlaveAgentListener.port=50000
       secrets:
         CIINABOX_KEYPAIR: 
           Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/ciinabox/keypair/${EnvironmentName}
@@ -222,22 +239,21 @@ jenkins:
         ips:
           - stack
 
-ec2_agent:
-  name: ${EnvironmentName}-ciinabox-ec2-agent
+<%- @config['agents'].each do |agent| %>
+<%= agent['name'] %>:
+  name: ${EnvironmentName}-ciinabox-<%= agent['name'] %>-agent
   security_groups:
     - name: ssh
       from: 22
       cidrip:
         Fn::Sub: ${VPCCidr}
-      desc: Allow Jenkins master to connect to the ec2 agents
+      desc: Allow Jenkins master to connect to the <%= agent['name'] %> agents on ssh
   maximum_availability_zones: 3
   enable_efs: false
   instance_tags:
-    Name: ${EnvironmentName}-ciinabox-agent-xx
-    ciinabox:name: ${EnvironmentName}
-    ciinabox:jenkins:label: ec2-agent
-    ciinabox:jenkins:type: agent
-    ciinabox:jenkins:spot-fleet: ec2-agent
+    Name: ${EnvironmentName}-ciinabox-<%= agent['name'] %>-agents-xx
+    ciinabox:agent:name: <%= agent['name'] %>
+    ciinabox:agent:os: <%= agent['os'] %>
   iam_policies:
     cross-account-sts:
       action:
@@ -266,6 +282,9 @@ ec2_agent:
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
   userdata: |
+  <%- if agent['os'] == 'linux' -%>
+    #!/bin/bash
+    set -o xtrace
     INSTANCE_ID=$(/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}')
     hostnamectl set-hostname ${!INSTANCE_ID}.${EnvironmentName}.ciinabox
     systemctl restart network
@@ -273,6 +292,12 @@ ec2_agent:
     usermod -a -G docker ec2-user
     systemctl start amazon-ssm-agent
     systemctl start docker
+  <%- elsif agent['os'] == 'windows' -%>
+    <powershell>
+    Restart-Service AmazonSSMAgent
+    </powershell>
+  <%- end -%>
+<%- end -%>
 
 config_export:
   global:

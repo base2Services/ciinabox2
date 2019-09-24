@@ -50,6 +50,27 @@ module Ciinabox
       ip_whitelist = ask "what IP CIDRs are you whitelisting?\nSpecify multiple IPs seperated by a space..."
       @setup[:ip_whitelist] = ip_whitelist.split(' ')
     end
+    
+    def set_agents
+      say "It is reccomended you setup agents as running executors on the master can cause issues", :yellow
+      @setup[:agents] = []
+      linux_agent = yes? "would you like to setup linux spot agents?"
+      if linux_agent
+        @setup[:agents].push({
+          name: 'linux',
+          os: 'linux',
+          ami: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+        })
+      end
+      windows_agent = yes? "would you like to setup windows spot agents?"
+      if windows_agent
+        @setup[:agents].push({
+          name: 'windows',
+          os: 'windows',
+          ami: '/aws/service/ami-windows-latest/Windows_Server-2019-English-Core-Base'
+        })
+      end
+    end
 
     def create_ciinabox_config
       opts = {setup: @setup}

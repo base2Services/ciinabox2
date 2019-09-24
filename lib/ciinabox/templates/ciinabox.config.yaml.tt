@@ -1,14 +1,26 @@
 ##Ciinabox configuration
 
 ciinabox_name: <%= config[:setup][:ciinabox_name] %>
-ciinabox_version: <%= config[:setup][:version] %>
-
-aws_account: <%= config[:setup][:aws_account_id] %>
-aws_region: <%= config[:setup][:aws_region] %>
+ciinabox_ami: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
 
 root_domain: <%= config[:setup][:root_domain] %>
 
 source_bucket: <%= config[:setup][:ciinabox_source_bucket] %>
+
+jenkins:
+  version: latest
+  cpu: 1024
+  memory: 1536
+
+<% if config[:setup][:agents].any? -%>
+agents:
+<% config[:setup][:agents].each do |agent| -%>
+  - 
+    name: <%= agent['name'] %>
+    os: <%= agent['os'] %>
+    ami: <%= agent['ami'] %>
+<% end -%>
+<% end -%>
 
 ip_blocks:
   webhooks:
@@ -18,7 +30,9 @@ ip_blocks:
     - 34.198.203.127/32 #bitbucket outbound for hook
     - 34.198.178.64/32 #bitbucket outbound for hook
     - 34.198.32.85/32 #bitbucket outbound for hook
+<% if config[:setup][:ip_whitelist].any? -%>
   whitelist:
-    <%- config[:setup][:ip_whitelist].each do |ip|%>
+  <% config[:setup][:ip_whitelist].each do |ip| -%>
     - <%= ip %>
-    <%- end %>
+  <% end -%>
+<% end -%>

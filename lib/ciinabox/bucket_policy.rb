@@ -19,7 +19,7 @@ module Ciinabox
 
     def set_ciinabox_config
       @build_dir = '.build'
-      @config_file = "#{@name}.ciinabox.yaml"
+      @config_file = "ciinabox.yaml"
       @config = YAML.load(File.read(@config_file))
     end
 

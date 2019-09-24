@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "ciinabox/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "ciinbox"
+  spec.name          = "ciinabox"
   spec.version       = Ciinabox::VERSION
   spec.authors       = ["aaronwalker", "Guslington"]
   spec.email         = ["ciinabox@base2services.com"]
@@ -33,6 +33,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "thor", "~> 0.19"
   spec.add_dependency "terminal-table", '~> 1', '<2'
   spec.add_dependency 'cfhighlander', '~>0.6', '<1'
+  spec.add_dependency 'cfndsl', '0.17.2'
   spec.add_runtime_dependency 'aws-sdk-core', '~> 3','<4'
   spec.add_runtime_dependency 'aws-sdk-s3', '~> 1', '<2'
   spec.add_runtime_dependency 'aws-sdk-ec2', '~> 1', '<2'

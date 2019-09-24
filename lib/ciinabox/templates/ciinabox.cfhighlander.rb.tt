@@ -1,11 +1,13 @@
 CfhighlanderTemplate do
 
-  ComponentDistribution "s3://#{source_bucket}/#{ciinabox_name}/cloudformation/#{component_name}"
-  ComponentVersion "#{ciinabox_version}"
+  ComponentDistribution "s3://#{source_bucket}/ciinabox/cloudformation/#{component_name}"
+  ComponentVersion "#{Ciinabox::VERSION}"
 
   Parameters do
-    ComponentParam 'CiinaboxAmi', '/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id', type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-    ComponentParam 'AgentAmi', '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2', type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    ComponentParam 'CiinaboxAmi', '<%= @config['ciinabox_ami'] %>', type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+  <% @config['agents'].each do |agent| -%>
+    ComponentParam '<%= agent['name'] %>Ami', '<%= agent['ami'] %>',type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+  <% end -%>
   end
 
   Component template: 'vpc@2.0.0', name: 'vpc', config: vpc do
@@ -24,33 +26,27 @@ CfhighlanderTemplate do
     end
   end
 
-  Component template: 'acm', name: 'acm' do
+  Component template: 'acm@1.1.1', name: 'acm' do
     parameter name: 'EnvironmentName', value: component_name
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DomainName', value: "*.#{component_name}.#{root_domain}"
     parameter name: 'CrossAccountDNSZoneIAMRole', value: ''
   end
 
-  Component template: 'github:guslington/hl-component-loadbalancer#develop.snapshot', name: 'loadbalancer', config: loadbalancer do
+  Component template: 'application-loadbalancer@0.1.0', name: 'loadbalancer', config: loadbalancer do
     parameter name: 'EnvironmentName', value: component_name
     parameter name: 'EnvironmentType', value: 'development'
+    parameter name: 'NetworkPrefix', value: '10'
     parameter name: 'DnsDomain', value: "#{root_domain}"
     parameter name: 'SslCertId', value: 'acm.CertificateArn'
     parameter name: 'StackOctet', value: "#{stack_octet}"
     parameter name: 'SubnetIds', value: cfout('vpc.PublicSubnets')
   end
 
-  Component template: 'keypair', name: 'keypair' do
+  Component template: 'keypair@1.0.0', name: 'keypair' do
     parameter name: 'KeyPairName', value: "#{component_name}"
     parameter name: 'SSMParameterPath', value: "/ciinabox/keypair"
   end
-
-#  Component template: 'github:guslington/hl-component-efs#develop.snapshot', name: 'efs', config: efs do
-#    parameter name: 'EnvironmentName', value: "#{component_name}"
-#    parameter name: 'EnvironmentType', value: 'development'
-#    parameter name: 'SubnetIds', value: cfout("vpc.PersistenceSubnets")
-#    parameter name: 'VPCCidr', value: cfout("vpc.VPCCidr")
-#  end
 
   Component template: 'service-discovery@0.1.0', name: 'servicediscovery', config: { namespace: "${EnvironmentName}.ciinabox" } do
     parameter name: 'EnvironmentName', value: component_name
@@ -67,20 +63,21 @@ CfhighlanderTemplate do
     parameter name: 'AsgMax', value: '2'
     parameter name: 'InstanceType', value: "#{ecs_instance_type}"
     parameter name: 'Ami', value: Ref('CiinaboxAmi')
-    parameter name: 'SecurityGroupBastion', value: 'loadbalancer.SecurityGroupLoadBalancer'
-    parameter name: 'SecurityGroupLoadBalancer', value: 'loadbalancer.SecurityGroupLoadBalancer'
+    parameter name: 'SecurityGroupBastion', value: 'loadbalancer.SecurityGroup'
+    parameter name: 'SecurityGroupLoadBalancer', value: 'loadbalancer.SecurityGroup'
     parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
     parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
     parameter name: 'AsgDesired', value: 1
     parameter name: 'EnableScaling', value: 'false'
     parameter name: 'SpotPrice', value: ''
+    parameter name: 'LaunchTemplateVersion', value: 'latest'
   end
 
-  Component template: 'github:guslington/hl-component-ecs-service#develop.snapshot', name: 'jenkins', config: jenkins do
+  Component template: 'ecs-service@2.3.0', name: 'jenkins', config: jenkins do
     parameter name: 'EnvironmentName', value: component_name
     parameter name: 'EnvironmentType', value: 'development'
+    parameter name: 'NetworkPrefix', value: '10'
     parameter name: 'LoadBalancer', value: 'loadbalancer.LoadBalancer'
-    parameter name: 'TargetGroup', value: 'loadbalancer.defaultTargetGroup'
     parameter name: 'Listener', value: 'loadbalancer.httpsListener'
     parameter name: 'MinimumHealthyPercent', value: 0
     parameter name: 'MaximumPercent', value: 100
@@ -91,18 +88,21 @@ CfhighlanderTemplate do
     parameter name: 'StackOctet', value: "#{stack_octet}"
     parameter name: 'NamespaceId', value: cfout('servicediscovery.NamespaceId')
     parameter name: 'S3Bucket', value: "#{source_bucket}"
-    parameter name: 'jenkinsVersion', value: "#{jenkins_version}"
+    parameter name: 'Version', value: "#{jenkins['version']}"
   end
-
-  Component template: 'spot-fleet@master.snapshot', name: 'ec2-agent', config: ec2_agent do
+  
+  <%- @config['agents'].each do |agent| -%>
+  Component template: 'spot-fleet@0.2.0', name: '<%= agent['name'] %>', config: <%= agent['name'] %> do
     parameter name: 'EnvironmentName', value: component_name
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'KeyName', value: cfout('keypair.KeyPair')
-    parameter name: 'Ami', value: Ref('AgentAmi')
+    parameter name: 'Ami', value: Ref('<%= agent['name'] %>Ami')
     parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
     parameter name: 'TargetCapacity', value: 0
+    parameter name: 'Type', value: 'maintain'
     parameter name: 'S3Bucket', value: "#{source_bucket}"
     parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
   end
-
+  <%- end -%>
+  
 end

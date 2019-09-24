@@ -1,6 +1,7 @@
 require 'thor'
 require 'ciinabox/version'
 require 'ciinabox/init'
+require 'ciinabox/compile'
 require 'ciinabox/deploy'
 require 'ciinabox/instances'
 require 'ciinabox/services'
@@ -21,6 +22,9 @@ module Ciinabox
     # Initializes ciinabox configuration
     register Ciinabox::Init, 'init', 'init [name]', 'Ciinabox configuration initialization'
     tasks["init"].options = Ciinabox::Init.class_options
+
+    register Ciinabox::Compile, 'compile', 'compile [name]', 'Compile ciinabox configuration and cloudformation'
+    tasks["compile"].options = Ciinabox::Compile.class_options
 
     register Ciinabox::Deploy, 'deploy', 'deploy [name]', 'Ciinabox base stack creation'
     tasks["deploy"].options = Ciinabox::Deploy.class_options
