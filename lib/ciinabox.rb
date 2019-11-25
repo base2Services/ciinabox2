@@ -7,7 +7,6 @@ require 'ciinabox/instances'
 require 'ciinabox/services'
 require 'ciinabox/agents'
 require 'ciinabox/fleets'
-require 'ciinabox/bucket_policy'
 require 'ciinabox/jenkins_config'
 
 module Ciinabox
@@ -40,9 +39,6 @@ module Ciinabox
     
     register Ciinabox::Fleets, 'fleets', 'fleets [name]', 'describe ciinabox spot fleet requests'
     tasks["fleets"].options = Ciinabox::Fleets.class_options
-    
-    register Ciinabox::BucketPolicy, 'bucket_policy', 'bucket-policy [name]', 'do things with the bucket'
-    tasks["bucket_policy"].options = Ciinabox::BucketPolicy.class_options
 
     register Ciinabox::JenkinsConfig, 'jenkins_config', 'jenkins-config [name]', 'upload the jenkins casc yaml config file to s3'
     tasks["jenkins_config"].options = Ciinabox::JenkinsConfig.class_options

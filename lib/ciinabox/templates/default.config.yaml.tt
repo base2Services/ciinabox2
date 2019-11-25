@@ -141,7 +141,7 @@ jenkins:
         AWS_REGION:
           Fn::Sub: ${AWS::Region}
         CASC_JENKINS_CONFIG:
-          Fn::Sub: https://s3-${AWS::Region}.amazonaws.com/${S3Bucket}/${EnvironmentName}/jenkins/jenkins.yaml
+          Fn::Sub: https://s3-${AWS::Region}.amazonaws.com/${S3Bucket}/${EnvironmentName}/jcasc/jenkins.yaml
         JAVA_OPTS: 
           Fn::Sub: >-
             -Dcb.BeekeeperProp.noFullUpgrade=true
@@ -238,66 +238,6 @@ jenkins:
             ToPort: 50000
         ips:
           - stack
-
-<%- @config['agents'].each do |agent| %>
-<%= agent['name'] %>:
-  name: ${EnvironmentName}-ciinabox-<%= agent['name'] %>-agent
-  security_groups:
-    - name: ssh
-      from: 22
-      cidrip:
-        Fn::Sub: ${VPCCidr}
-      desc: Allow Jenkins master to connect to the <%= agent['name'] %> agents on ssh
-  maximum_availability_zones: 3
-  enable_efs: false
-  instance_tags:
-    Name: ${EnvironmentName}-ciinabox-<%= agent['name'] %>-agents-xx
-    ciinabox:agent:name: <%= agent['name'] %>
-    ciinabox:agent:os: <%= agent['os'] %>
-  iam_policies:
-    cross-account-sts:
-      action:
-        - sts:AssumeRole
-    ssm-ssh-access:
-      action:
-        - ssm:UpdateInstanceInformation
-        - ssm:ListInstanceAssociations
-        - ec2messages:GetMessages
-        - ssmmessages:CreateControlChannel
-        - ssmmessages:CreateDataChannel
-        - ssmmessages:OpenControlChannel
-        - ssmmessages:OpenDataChannel
-    s3-list-ciinabox-bucket:
-      action:
-        - s3:ListBucket
-      resource:
-        - Fn::Sub: arn:aws:s3:::${S3Bucket}
-    s3-rw-ciinabox-bucket:
-      action:
-        - s3:GetObject
-        - s3:GetObjectAcl
-        - s3:GetObjectVersion
-        - s3:PutObject
-        - s3:PutObjectAcl
-      resource:
-        - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
-  userdata: |
-  <%- if agent['os'] == 'linux' -%>
-    #!/bin/bash
-    set -o xtrace
-    INSTANCE_ID=$(/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}')
-    hostnamectl set-hostname ${!INSTANCE_ID}.${EnvironmentName}.ciinabox
-    systemctl restart network
-    yum install -y java-1.8.0 git docker amazon-ssm-agent
-    usermod -a -G docker ec2-user
-    systemctl start amazon-ssm-agent
-    systemctl start docker
-  <%- elsif agent['os'] == 'windows' -%>
-    <powershell>
-    Restart-Service AmazonSSMAgent
-    </powershell>
-  <%- end -%>
-<%- end -%>
 
 config_export:
   global:

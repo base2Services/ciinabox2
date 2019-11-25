@@ -5,25 +5,19 @@ CfhighlanderTemplate do
 
   Parameters do
     ComponentParam 'CiinaboxAmi', '<%= @config['ciinabox_ami'] %>', type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-  <% @config['agents'].each do |agent| -%>
-    ComponentParam '<%= agent['name'] %>Ami', '<%= agent['ami'] %>',type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-  <% end -%>
   end
 
-  Component template: 'vpc@2.0.0', name: 'vpc', config: vpc do
+  Component template: 'vpc-v2@master.snapshot', name: 'vpc', config: vpc do
     parameter name: 'EnvironmentName', value: component_name
     parameter name: 'EnvironmentType', value: 'development'
-    parameter name: 'NetworkPrefix', value: '10'
-    parameter name: 'StackOctet', value: "#{stack_octet}"
-    parameter name: 'StackMask', value: '16'
-    parameter name: 'SingleNatGateway', value: 'true'
-    parameter name: 'MaxNatGateways', value: '1'
     parameter name: 'DnsDomain', value: "#{root_domain}"
+    parameter name: 'AvailabiltiyZones', value: '2'
+    parameter name: 'NetworkBits', value: '10.0'
+    parameter name: 'NatGateways', value: '1'
+    parameter name: 'NatGatewayEIPs', value: ''
+    parameter name: 'EnableTransitVPC', value: 'false'
     parameter name: 'dnszoneAddNSRecords', value: 'true'
     parameter name: 'dnszoneParentIAMRole', value: ''
-    maximum_availability_zones.times do |az|
-      parameter name: "Nat#{az}EIPAllocationId", value: 'dynamic'
-    end
   end
 
   Component template: 'acm@1.1.1', name: 'acm' do
@@ -51,6 +45,15 @@ CfhighlanderTemplate do
   Component template: 'service-discovery@0.1.0', name: 'servicediscovery', config: { namespace: "${EnvironmentName}.ciinabox" } do
     parameter name: 'EnvironmentName', value: component_name
     parameter name: 'EnvironmentType', value: 'development'
+  end
+  
+  Component template: 'github:base2services/hl-component-jcasc-pipeline#master.snapshot', name: 'jcasc' do
+    parameter name: 'EnvironmentName', value: component_name
+    parameter name: 'EnvironmentType', value: 'development'
+    parameter name: 'VPC', value: cfout('vpc.VPCId')
+    parameter name: 'VPCEndpointId', value: cfout('vpc.S3VPCEndpointId')
+    parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
+    parameter name: 'JenkinsUrl', value: "https://jenkins.#{component_name}.#{root_domain}"
   end
 
   Component template: 'github:guslington/hl-component-ecs#develop.snapshot', name: 'ecs', config: ecs do
@@ -90,19 +93,5 @@ CfhighlanderTemplate do
     parameter name: 'S3Bucket', value: "#{source_bucket}"
     parameter name: 'Version', value: "#{jenkins['version']}"
   end
-  
-  <%- @config['agents'].each do |agent| -%>
-  Component template: 'spot-fleet@0.2.0', name: '<%= agent['name'] %>', config: <%= agent['name'] %> do
-    parameter name: 'EnvironmentName', value: component_name
-    parameter name: 'EnvironmentType', value: 'development'
-    parameter name: 'KeyName', value: cfout('keypair.KeyPair')
-    parameter name: 'Ami', value: Ref('<%= agent['name'] %>Ami')
-    parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
-    parameter name: 'TargetCapacity', value: 0
-    parameter name: 'Type', value: 'maintain'
-    parameter name: 'S3Bucket', value: "#{source_bucket}"
-    parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
-  end
-  <%- end -%>
   
 end
