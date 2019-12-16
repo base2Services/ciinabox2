@@ -2,33 +2,35 @@
 
 maximum_availability_zones: 3
 
-stack_octet: 50
-
 ecs_instance_type: t2.small
 
-ip_blocks:
-  internal:
-    - stack
+nat: 
+  type: managed
+  count: 1
+  size: t3.micro
+  spot: 'true'
+  ami: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs'
+  
 
 vpc:
+  azs: 2
   manage_ns_records: true
+  vpc_cidr: 10.150.0.0/24
+  subnet_mask: 27
   subnets:
-    vpc_public:
-      allocation: 0
-      name: Public
-      type: public
-    compute:
-      allocation: 1
-      name: Compute
-      type: private
+    persistence:
+      enable: false
+    cache:
+      enable: false
 
 ecs:
+  ami: '/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id'
   security_group_rules:
     - from: 2049
       ip: ${VPCCidr}
       desc: Allow EFS access from ECS tasks
   enable_efs: false
-  cluster_name: ciinabox
+  cluster_name: ${EnvironmentName}-ciinabox
   iam_policies:
     rexray-efs-plugin:
       action:
@@ -57,9 +59,6 @@ ecs:
     ciinabox:jenkins:label: master
     ciinabox:jenkins:type: master
   userdata: |
-    INSTANCE_ID=$(/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}')
-    hostname ${EnvironmentName}-ecs-${!INSTANCE_ID}
-    sed '/HOSTNAME/d' /etc/sysconfig/network > /tmp/network && mv -f /tmp/network /etc/sysconfig/network && echo "HOSTNAME=${EnvironmentName}-ecs-${!INSTANCE_ID}" >>/etc/sysconfig/network && /etc/init.d/network restart
     echo ECS_CLUSTER=${EcsCluster} >> /etc/ecs/ecs.config
     yum install -y amazon-efs-utils nfs-utils amazon-ssm-agent
     systemctl start amazon-ssm-agent
@@ -121,7 +120,7 @@ loadbalancer:
 
 jenkins:
   network_mode: awsvpc
-  health_check_grace_period: 120
+  health_check_grace_period: 300
   volumes:
     - docker-socket:/var/run/docker.sock
     - Name:
@@ -132,7 +131,7 @@ jenkins:
         Autoprovision: true
   task_definition:
     jenkins:
-      image: cloudbees/cloudbees-jenkins-distribution
+      image: base2/jenkins-distribution
       tag_param: Version
       tag_param_default: latest
       env_vars:
@@ -141,19 +140,23 @@ jenkins:
         AWS_REGION:
           Fn::Sub: ${AWS::Region}
         CASC_JENKINS_CONFIG:
-          Fn::Sub: https://s3-${AWS::Region}.amazonaws.com/${S3Bucket}/${EnvironmentName}/jcasc/jenkins.yaml
+          Ref: JcascS3Path
         JAVA_OPTS: 
           Fn::Sub: >-
-            -Dcb.BeekeeperProp.noFullUpgrade=true
-            -Dcb.BeekeeperProp.disableIncrementalWizard=true
             -Dhudson.TcpSlaveAgentListener.hostName=jenkins.${EnvironmentName}.ciinabox 
             -Dhudson.TcpSlaveAgentListener.port=50000
+            -Dcb.BeekeeperProp.noFullUpgrade=true
+            -Dcb.BeekeeperProp.disableIncrementalWizard=true
+            -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.allRequired=true
+            -Dhudson.TcpSlaveAgentListener.hostName=jenkins
+            -Dhudson.TcpSlaveAgentListener.port=50000
+            -Djenkins.install.runSetupWizard=false
       secrets:
-        CIINABOX_KEYPAIR: 
-          Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/ciinabox/keypair/${EnvironmentName}
+        secretsmanager:
+          JENKINS_PASSWORD: /${EnvironmentName}/jenkins/admin/password
       ports:
-        - 8080
-        - 50000
+      - 8080
+      - 50000
       mounts:
         - /var/run/docker.sock:docker-socket
         - ContainerPath: /var/cloudbees-jenkins-distribution
@@ -218,26 +221,23 @@ jenkins:
         - s3:PutObjectAcl
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+    secretsmanager:
+      action:
+        - secretsmanager:ListSecrets
+        - secretsmanager:GetSecretValue
     ecr-mamange-repos:
       action:
         - ecr:*
   service_discovery:
     name: jenkins
     container_name: jenkins
-  securityGroups:
-    jenkins:
-      -
-        rules:
-          -
-            IpProtocol: tcp
-            FromPort: 8080
-            ToPort: 8080
-          -
-            IpProtocol: tcp
-            FromPort: 50000
-            ToPort: 50000
-        ips:
-          - stack
+  security_group_rules:
+    - from: 8080
+      ip: ${VPCCidr}
+      desc: HTTP access from inside the vpc
+    - from: 50000
+      ip: ${VPCCidr}
+      desc: Access from jenkins agents inside the vpc
 
 config_export:
   global:

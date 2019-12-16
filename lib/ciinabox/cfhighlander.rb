@@ -6,18 +6,16 @@ require 'ciinabox/version'
 require 'ciinabox/log'
 
 module Ciinabox
-  class CfHiglander
+  class CfHighlander
     include Ciinabox::Log
 
-    def initialize(region, name, config, build_dir)
+    def initialize(name, config, build_dir)
       @name = name
-      @region = region
       @config = config
       @build_dir = build_dir
       @cfn_output_format = 'yaml'
       ENV['CFHIGHLANDER_WORKDIR'] = @build_dir
       ENV['HIGHLANDER_WORKDIR']  = @build_dir
-      ENV['HL_VPC_AZ_LOCAL_ONLY'] = '1'
     end
 
     def render()
@@ -51,6 +49,7 @@ module Ciinabox
 
     def compile_component(component)
       component_compiler = Cfhighlander::Compiler::ComponentCompiler.new(component)
+      component_compiler.silent_mode = true
       component_compiler.compileCloudFormation(@cfn_output_format)
       return component_compiler
     end

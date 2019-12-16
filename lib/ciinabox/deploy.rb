@@ -12,11 +12,15 @@ module Ciinabox
 
     argument :name
     
-    class_option :profile, desc: 'AWS Profile'
-    class_option :region, default: ENV['AWS_REGION'], desc: 'AWS Region'
     class_option :verbose, desc: 'set log level to debug', type: :boolean
+    class_option :region, desc: 'AWS region'
+    
     class_option :force, desc: 'skip changeset verification', type: :boolean
 
+    def set_aws_config
+      Aws.config[:region] = options[:region] if options.has_key?('region')
+    end
+    
     def self.source_root
       File.dirname(__FILE__)
     end
@@ -31,11 +35,6 @@ module Ciinabox
       @config = YAML.load(File.read(@config_file))
     end
 
-    def set_aws_config
-      Aws.config[:profile] = options[:profile] if options.key?(:profile)
-      Aws.config[:region] = @options[:region]
-    end
-
     def generate_templates
       remove_dir @build_dir
       empty_directory @build_dir
@@ -43,13 +42,13 @@ module Ciinabox
       template('templates/default.config.yaml.tt', "#{@build_dir}/#{@name}.config.yaml")
 
       Log.logger.debug "Generating cloudformation from #{@build_dir}/#{@name}.cfhighlander.rb"
-      cfhl = Ciinabox::CfHiglander.new(@options[:region],@name,@config,@build_dir)
+      cfhl = Ciinabox::CfHighlander.new(@name,@config,@build_dir)
       compiler = cfhl.render()
       @template_url = cfhl.publish(compiler)
     end
 
     def deploy_templates
-      say "Launching cloudformation stack #{@name}-ciinabox in #{@options[:region]}"
+      say "Launching cloudformation stack #{@name}-ciinabox"
       cfn = Ciinabox::Cloudformation.new(@name)
       change_set, change_set_type = cfn.create_change_set(@template_url)
       cfn.wait_for_changeset(change_set.id)

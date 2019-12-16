@@ -3,21 +3,22 @@ CfhighlanderTemplate do
   ComponentDistribution "s3://#{source_bucket}/ciinabox/cloudformation/#{component_name}"
   ComponentVersion "#{Ciinabox::VERSION}"
 
-  Parameters do
-    ComponentParam 'CiinaboxAmi', '<%= @config['ciinabox_ami'] %>', type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-  end
-
   Component template: 'vpc-v2@master.snapshot', name: 'vpc', config: vpc do
     parameter name: 'EnvironmentName', value: component_name
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
-    parameter name: 'AvailabiltiyZones', value: '2'
-    parameter name: 'NetworkBits', value: '10.0'
-    parameter name: 'NatGateways', value: '1'
+    parameter name: 'AvailabiltiyZones', value: vpc['azs']
+    parameter name: 'NatGateways', value: nat['count']
     parameter name: 'NatGatewayEIPs', value: ''
     parameter name: 'EnableTransitVPC', value: 'false'
     parameter name: 'dnszoneAddNSRecords', value: 'true'
     parameter name: 'dnszoneParentIAMRole', value: ''
+    parameter name: 'NatType', value: nat['type']
+    parameter name: 'NatInstanceType', value: nat['size']
+    parameter name: 'NatInstancesSpot', value: nat['spot']
+    parameter name: 'NatAmi', value: nat['ami']
+    parameter name: 'CIDR', value: vpc['vpc_cidr']
+    parameter name: 'SubnetBits', value: '4'
   end
 
   Component template: 'acm@1.1.1', name: 'acm' do
@@ -33,7 +34,6 @@ CfhighlanderTemplate do
     parameter name: 'NetworkPrefix', value: '10'
     parameter name: 'DnsDomain', value: "#{root_domain}"
     parameter name: 'SslCertId', value: 'acm.CertificateArn'
-    parameter name: 'StackOctet', value: "#{stack_octet}"
     parameter name: 'SubnetIds', value: cfout('vpc.PublicSubnets')
   end
 
@@ -53,30 +53,30 @@ CfhighlanderTemplate do
     parameter name: 'VPC', value: cfout('vpc.VPCId')
     parameter name: 'VPCEndpointId', value: cfout('vpc.S3VPCEndpointId')
     parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
-    parameter name: 'JenkinsUrl', value: "https://jenkins.#{component_name}.#{root_domain}"
+    parameter name: 'JenkinsUrl', value: "http://jenkins.#{component_name}.ciinabox:8080"
+    parameter name: 'JenkinsUser', value: 'ciinabox'
   end
 
-  Component template: 'github:guslington/hl-component-ecs#develop.snapshot', name: 'ecs', config: ecs do
+  Component template: 'ecs-v2@master.snapshot', name: 'ecs', config: ecs do
     parameter name: 'EnvironmentName', value: component_name
     parameter name: 'EnvironmentType', value: 'development'
-    parameter name: 'StackOctet', value: "#{stack_octet}"
     parameter name: 'KeyName', value: cfout('keypair.KeyPair')
     parameter name: 'DnsDomain', value:"#{root_domain}"
     parameter name: 'AsgMin', value: '1'
     parameter name: 'AsgMax', value: '2'
     parameter name: 'InstanceType', value: "#{ecs_instance_type}"
-    parameter name: 'Ami', value: Ref('CiinaboxAmi')
+    parameter name: 'Ami', value: ecs['ami']
     parameter name: 'SecurityGroupBastion', value: 'loadbalancer.SecurityGroup'
     parameter name: 'SecurityGroupLoadBalancer', value: 'loadbalancer.SecurityGroup'
-    parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
+    parameter name: 'Subnets', value: cfout('vpc.ComputeSubnets')
     parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
     parameter name: 'AsgDesired', value: 1
-    parameter name: 'EnableScaling', value: 'false'
-    parameter name: 'SpotPrice', value: ''
+    parameter name: 'Spot', value: 'false'
     parameter name: 'LaunchTemplateVersion', value: 'latest'
+    parameter name: 'ContainerInsights', value: 'disabled'
   end
 
-  Component template: 'ecs-service@2.3.0', name: 'jenkins', config: jenkins do
+  Component template: 'github:base2services/hl-component-ecs-service#security-groups.snapshot', name: 'jenkins', config: jenkins do
     parameter name: 'EnvironmentName', value: component_name
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'NetworkPrefix', value: '10'
@@ -88,10 +88,15 @@ CfhighlanderTemplate do
     parameter name: 'EnableScaling', value: 'false'
     parameter name: 'DnsDomain', value: "#{root_domain}"
     parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
-    parameter name: 'StackOctet', value: "#{stack_octet}"
     parameter name: 'NamespaceId', value: cfout('servicediscovery.NamespaceId')
     parameter name: 'S3Bucket', value: "#{source_bucket}"
     parameter name: 'Version', value: "#{jenkins['version']}"
+    parameter name: 'JcascS3Path', value: cfout('jcasc.FileLocation')
+    parameter name: 'EnableFargate', value: 'false'
+    parameter name: 'SecurityGroupBackplane', value: ''
+    parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
+    parameter name: 'TargetGroup', value: ''
+    parameter name: 'JenkinsSecret', value: cfout('jcasc.JenkinsSecret')
   end
   
 end

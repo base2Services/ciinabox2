@@ -7,7 +7,9 @@ require 'ciinabox/instances'
 require 'ciinabox/services'
 require 'ciinabox/agents'
 require 'ciinabox/fleets'
-require 'ciinabox/jenkins_config'
+require 'ciinabox/jcasc/show_commits'
+require 'ciinabox/jcasc/deploy'
+require 'ciinabox/jcasc/s3_file'
 
 module Ciinabox
   class Cli < Thor
@@ -17,7 +19,7 @@ module Ciinabox
     def __print_version
       puts Ciinabox::VERSION
     end
-
+    
     # Initializes ciinabox configuration
     register Ciinabox::Init, 'init', 'init [name]', 'Ciinabox configuration initialization'
     tasks["init"].options = Ciinabox::Init.class_options
@@ -40,9 +42,15 @@ module Ciinabox
     register Ciinabox::Fleets, 'fleets', 'fleets [name]', 'describe ciinabox spot fleet requests'
     tasks["fleets"].options = Ciinabox::Fleets.class_options
 
-    register Ciinabox::JenkinsConfig, 'jenkins_config', 'jenkins-config [name]', 'upload the jenkins casc yaml config file to s3'
-    tasks["jenkins_config"].options = Ciinabox::JenkinsConfig.class_options
+    register Ciinabox::Jcasc::ShowCommits, 'jcasc_show_commits', 'jcasc-show-commits [name]', 'display jenkins configuration as code commit hostory'
+    tasks["jcasc_show_commits"].options = Ciinabox::Jcasc::ShowCommits.class_options
+
+    register Ciinabox::Jcasc::Deploy, 'jcasc_deploy', 'jcasc-deploy [name]', 'deploy jenkins configuration as code from commit or branch'
+    tasks["jcasc_deploy"].options = Ciinabox::Jcasc::Deploy.class_options
     
+    register Ciinabox::Jcasc::S3File, 'jcasc_s3_file', 'jcasc-s3-file [name]', 'show jenkins configuration as code in s3'
+    tasks["jcasc_s3_file"].options = Ciinabox::Jcasc::S3File.class_options
+        
   end
 
   Aws.config[:retry_limit] = if ENV.key? 'CIINABOX_AWS_RETRY_LIMIT' then (ENV['CIINABOX_AWS_RETRY_LIMIT'].to_i) else 10 end

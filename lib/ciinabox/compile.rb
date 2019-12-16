@@ -12,12 +12,16 @@ module Ciinabox
 
     argument :name
     
-    class_option :profile, desc: 'AWS Profile'
-    class_option :region, default: ENV['AWS_REGION'], desc: 'AWS Region'
     class_option :verbose, desc: 'set log level to debug', type: :boolean
+    class_option :region, desc: 'AWS region'
+    
     class_option :publish, desc: 'publish templates to s3', default: false, type: :boolean
     class_option :template_config, desc: 'generate CodePipeline template config json file', default: false, type: :boolean
 
+    def set_aws_config
+      Aws.config[:region] = options[:region] if options.has_key?('region')
+    end
+    
     def self.source_root
       File.dirname(__FILE__)
     end
@@ -32,11 +36,6 @@ module Ciinabox
       @config = YAML.load(File.read(@config_file))
     end
 
-    def set_aws_config
-      Aws.config[:profile] = options[:profile] if options.key?(:profile)
-      Aws.config[:region] = @options[:region]
-    end
-
     def generate_templates
       remove_dir @build_dir
       empty_directory @build_dir
@@ -44,7 +43,7 @@ module Ciinabox
       template('templates/default.config.yaml.tt', "#{@build_dir}/#{@name}.config.yaml", @config)
 
       Log.logger.debug "Generating cloudformation from #{@build_dir}/#{@name}.cfhighlander.rb"
-      cfhl = Ciinabox::CfHiglander.new(@options[:region],@name,@config,@build_dir)
+      cfhl = Ciinabox::CfHighlander.new(@name,@config,@build_dir)
       compiler = cfhl.render()
       if @options[:publish]
         Log.logger.debug "Publishing cloudformation templates to s3"

@@ -1,26 +1,14 @@
 ##Ciinabox configuration
 
 ciinabox_name: <%= config[:setup][:ciinabox_name] %>
-ciinabox_ami: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
-
+region: <%= config[:setup][:region] %>
 root_domain: <%= config[:setup][:root_domain] %>
-
-source_bucket: <%= config[:setup][:ciinabox_source_bucket] %>
+source_bucket: <%= config[:setup][:source_bucket] %>
 
 jenkins:
-  version: latest
+  version: 2.190.3.2
   cpu: 1024
   memory: 1536
-
-<% if config[:setup][:agents].any? -%>
-agents:
-<% config[:setup][:agents].each do |agent| -%>
-  - 
-    name: <%= agent['name'] %>
-    os: <%= agent['os'] %>
-    ami: <%= agent['ami'] %>
-<% end -%>
-<% end -%>
 
 ip_blocks:
   webhooks:

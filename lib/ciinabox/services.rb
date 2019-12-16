@@ -7,10 +7,14 @@ module Ciinabox
     include Thor::Actions
 
     argument :name
+    
+    class_option :verbose, desc: 'set log level to debug', type: :boolean
+    class_option :region, desc: 'AWS region'
 
-    class_option :profile, desc: 'AWS Profile'
-    class_option :region, default: ENV['AWS_REGION'], desc: 'AWS Region'
-
+    def set_aws_config
+      Aws.config[:region] = options[:region] if options.has_key?('region')
+    end
+    
     def self.source_root
       File.dirname(__FILE__)
     end
