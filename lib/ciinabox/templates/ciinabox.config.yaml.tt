@@ -5,6 +5,8 @@ region: <%= config[:setup][:region] %>
 root_domain: <%= config[:setup][:root_domain] %>
 source_bucket: <%= config[:setup][:source_bucket] %>
 
+ecs_instance_type: t2.small
+
 jenkins:
   version: 2.190.3.2
   cpu: 1024

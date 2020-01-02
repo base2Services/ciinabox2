@@ -39,11 +39,11 @@ module Ciinabox
     def generate_templates
       remove_dir @build_dir
       empty_directory @build_dir
-      template('templates/ciinabox.cfhighlander.rb.tt', "#{@build_dir}/#{@name}.cfhighlander.rb", @config)
-      template('templates/default.config.yaml.tt', "#{@build_dir}/#{@name}.config.yaml", @config)
+      template('templates/ciinabox.cfhighlander.rb.tt', "#{@build_dir}/ciinabox.cfhighlander.rb", @config)
+      template('templates/default.config.yaml.tt', "#{@build_dir}/ciinabox.config.yaml", @config)
 
-      Log.logger.debug "Generating cloudformation from #{@build_dir}/#{@name}.cfhighlander.rb"
-      cfhl = Ciinabox::CfHighlander.new(@name,@config,@build_dir)
+      Log.logger.debug "Generating cloudformation from #{@build_dir}/ciinabox.cfhighlander.rb"
+      cfhl = Ciinabox::CfHighlander.new(@config,@build_dir)
       compiler = cfhl.render()
       if @options[:publish]
         Log.logger.debug "Publishing cloudformation templates to s3"
@@ -58,15 +58,8 @@ module Ciinabox
           Tags: {
             'ciinabox:name': @name,
             'ciinabox:version': Ciinabox::VERSION
-          },
-          Parameters: {
-            CiinaboxAmi: @config['ciinabox_ami']
           }
         }
-        
-        @config['agents'].each do |agent|
-          template_config[:Parameters]["#{agent['name']}Ami"] = agent['ami']
-        end if @config['agents'].any?
         
         File.write("template-config.ciinabox.json",template_config.to_json)
         say "Generated codepipeline json config file", :green

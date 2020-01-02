@@ -38,11 +38,11 @@ module Ciinabox
     def generate_templates
       remove_dir @build_dir
       empty_directory @build_dir
-      template('templates/ciinabox.cfhighlander.rb.tt', "#{@build_dir}/#{@name}.cfhighlander.rb")
-      template('templates/default.config.yaml.tt', "#{@build_dir}/#{@name}.config.yaml")
+      template('templates/ciinabox.cfhighlander.rb.tt', "#{@build_dir}/ciinabox.cfhighlander.rb")
+      template('templates/default.config.yaml.tt', "#{@build_dir}/ciinabox.config.yaml")
 
-      Log.logger.debug "Generating cloudformation from #{@build_dir}/#{@name}.cfhighlander.rb"
-      cfhl = Ciinabox::CfHighlander.new(@name,@config,@build_dir)
+      Log.logger.debug "Generating cloudformation from #{@build_dir}/ciinabox.cfhighlander.rb"
+      cfhl = Ciinabox::CfHighlander.new(@config,@build_dir)
       compiler = cfhl.render()
       @template_url = cfhl.publish(compiler)
     end
@@ -77,8 +77,6 @@ module Ciinabox
       say "Waiting for #{change_set_type.downcase} to complete..."
       cfn.wait_for_execute(change_set_type)
     end
-    
-    
     
     def finish
       say "ciinabox deploy #{@name} complete,\nJenkins URL: https://jenkins.#{@name}.#{@config['root_domain']}"

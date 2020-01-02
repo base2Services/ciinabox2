@@ -9,8 +9,7 @@ module Ciinabox
   class CfHighlander
     include Ciinabox::Log
 
-    def initialize(name, config, build_dir)
-      @name = name
+    def initialize(config, build_dir)
       @config = config
       @build_dir = build_dir
       @cfn_output_format = 'yaml'
@@ -40,7 +39,7 @@ module Ciinabox
 
     def load_component()
       factory = Cfhighlander::Factory::ComponentFactory.new
-      component = factory.loadComponentFromTemplate(@name)
+      component = factory.loadComponentFromTemplate('ciinabox')
       component.config = load_config()
       component.version = Ciinabox::VERSION
       component.load()
@@ -60,7 +59,7 @@ module Ciinabox
     end
 
     def load_config()
-      config_file = "#{@build_dir}/#{@name}.config.yaml"
+      config_file = "#{@build_dir}/ciinabox.config.yaml"
       ciinabox_config = YAML.load(File.read(config_file))
       return ciinabox_config.deep_merge(@config)
     end

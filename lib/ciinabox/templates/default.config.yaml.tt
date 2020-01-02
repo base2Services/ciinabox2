@@ -65,28 +65,24 @@ ecs:
     docker plugin install rexray/efs REXRAY_PREEMPT=true EFS_REGION=${AWS::Region} EFS_SECURITYGROUPS=${SecurityGroupEcs} --grant-all-permissions
     systemctl restart docker
 
-
 loadbalancer:
   loadbalancer_attributes:
-    idle_timeout.timeout_seconds: 300
-  
+    idle_timeout.timeout_seconds: 300  
   records:
-    - "*"
-    
+  - "*"  
   security_group_rules:
-    -
-      from: 80
-      ip_blocks:
-        - webhooks
-        - whitelist
-      desc: public HTTP access
-    -
-      from: 443
-      ip_blocks:
-        - webhooks
-        - whitelist
-      desc: public HTTPS access
-      
+  - from: 80
+    ip_blocks:
+      - whitelist
+    desc: ciinabox whitelist
+  - from: 443
+    ip_blocks:
+      - whitelist
+    desc: ciinabox whitelist
+  - from: 443
+    ip_blocks:
+      - webhooks
+    desc: Github and bitbucket webhooks
   listeners:
     http:
       port: 80
@@ -115,8 +111,6 @@ loadbalancer:
                   </script>
                 </body>
               </html> 
-
-            
 
 jenkins:
   network_mode: awsvpc
@@ -192,18 +186,6 @@ jenkins:
         - iam:ListRoles
         - iam:PassRole
         - iam:ListInstanceProfiles
-    ecs-jenkins-plugin:
-      action:
-        - ecs:ListClusters
-        - ecs:DescribeContainerInstances
-        - ecs:RegisterTaskDefinition
-        - ecs:DeregisterTaskDefinition
-        - ecs:ListTaskDefinitions
-        - ecs:DescribeTaskDefinition
-        - ecs:RunTask
-        - ecs:StopTask
-        - ecs:ListContainerInstances
-        - ecs:DescribeTasks
     ec2-fleet-plugin:
       action:
         - ec2:*
@@ -221,10 +203,22 @@ jenkins:
         - s3:PutObjectAcl
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
-    secretsmanager:
+    secretsmanager-list:
       action:
         - secretsmanager:ListSecrets
+    secretsmanager-get:
+      action:
         - secretsmanager:GetSecretValue
+      resource:
+        - Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentName}/jenkins/*
+    ssm-parameters:
+      action:
+        - ssm:GetParameter
+      resource:
+        - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/ciinabox/*
+    sns-publish:
+      action:
+        - sns:Publish
     ecr-mamange-repos:
       action:
         - ecr:*
@@ -238,6 +232,38 @@ jenkins:
     - from: 50000
       ip: ${VPCCidr}
       desc: Access from jenkins agents inside the vpc
+
+ec2agents:
+  iam_policies:
+    sts:
+      action:
+        - sts:AssumeRole
+    ecr-mamange-repos:
+      action:
+        - ecr:*
+    s3-list-ciinabox-bucket:
+      action:
+        - s3:ListBucket
+      resource:
+        - Fn::Sub: arn:aws:s3:::${S3Bucket}
+    s3-rw:
+      action:
+        - s3:GetObject
+        - s3:GetObjectAcl
+        - s3:GetObjectVersion
+        - s3:PutObject
+        - s3:PutObjectAcl
+      resource:
+        - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+    ssm-ssh-access:
+      action:
+        - ssm:UpdateInstanceInformation
+        - ssm:ListInstanceAssociations
+        - ec2messages:GetMessages
+        - ssmmessages:CreateControlChannel
+        - ssmmessages:CreateDataChannel
+        - ssmmessages:OpenControlChannel
+        - ssmmessages:OpenDataChannel
 
 config_export:
   global:
