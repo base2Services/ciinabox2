@@ -21,12 +21,12 @@ CfhighlanderTemplate do
     parameter name: 'SubnetBits', value: '4'
   end
   
-  acm_record = vpc['create_hosted_zone'] ? "*.#{ciinabox_name}.#{root_domain}" : "*.#{root_domain}"
+  full_zone = vpc['create_hosted_zone'] ? "#{ciinabox_name}.#{root_domain}" : "#{root_domain}"
   
   Component template: 'acm@1.2.0', name: 'acm' do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
-    parameter name: 'DomainName', value: acm_record
+    parameter name: 'DomainName', value: "*.#{full_zone}"
     parameter name: 'CrossAccountDNSZoneIAMRole', value: ''
   end
 
@@ -56,7 +56,7 @@ CfhighlanderTemplate do
     parameter name: 'VPCEndpointId', value: cfout('vpc.S3VPCEndpointId')
     parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
     parameter name: 'JenkinsInternalUrl', value: "http://jenkins.#{ciinabox_name}.ciinabox:8080"
-    parameter name: 'JenkinsExternalUrl', value: "https://jenkins.#{ciinabox_name}.#{root_domain}/"
+    parameter name: 'JenkinsExternalUrl', value: "https://jenkins.#{full_zone}/"
     parameter name: 'JenkinsUser', value: 'ciinabox'
   end
 
