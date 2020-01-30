@@ -2,9 +2,9 @@ CfhighlanderTemplate do
 
   ComponentDistribution "s3://#{source_bucket}/cloudformation/ciinabox/#{ciinabox_name}"
   ComponentVersion "#{Ciinabox::VERSION}"
-
+    
   Component template: 'vpc-v2@0.5.0', name: 'vpc', config: vpc do
-    parameter name: 'EnvironmentName', value: ciinabox_name
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
     parameter name: 'AvailabiltiyZones', value: vpc['azs']
@@ -20,16 +20,18 @@ CfhighlanderTemplate do
     parameter name: 'CIDR', value: vpc['vpc_cidr']
     parameter name: 'SubnetBits', value: '4'
   end
-
+  
+  acm_record = vpc['create_hosted_zone'] ? "*.#{ciinabox_name}.#{root_domain}" : "*.#{root_domain}"
+  
   Component template: 'acm@1.2.0', name: 'acm' do
-    parameter name: 'EnvironmentName', value: ciinabox_name
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
-    parameter name: 'DomainName', value: "*.#{ciinabox_name}.#{root_domain}"
+    parameter name: 'DomainName', value: acm_record
     parameter name: 'CrossAccountDNSZoneIAMRole', value: ''
   end
 
   Component template: 'application-loadbalancer@0.2.1', name: 'loadbalancer', config: loadbalancer do
-    parameter name: 'EnvironmentName', value: ciinabox_name
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'NetworkPrefix', value: '10'
     parameter name: 'DnsDomain', value: "#{root_domain}"
@@ -43,12 +45,12 @@ CfhighlanderTemplate do
   end
 
   Component template: 'service-discovery@0.1.0', name: 'servicediscovery', config: { namespace: "${EnvironmentName}.ciinabox" } do
-    parameter name: 'EnvironmentName', value: ciinabox_name
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
   end
   
   Component template: 'github:base2services/hl-component-jcasc-pipeline#master.snapshot', name: 'jcasc' do
-    parameter name: 'EnvironmentName', value: ciinabox_name
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VPC', value: cfout('vpc.VPCId')
     parameter name: 'VPCEndpointId', value: cfout('vpc.S3VPCEndpointId')
@@ -59,10 +61,10 @@ CfhighlanderTemplate do
   end
 
   Component template: 'ecs-v2@master.snapshot', name: 'ecs', config: ecs do
-    parameter name: 'EnvironmentName', value: ciinabox_name
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'KeyName', value: cfout('keypair.KeyPair')
-    parameter name: 'DnsDomain', value:"#{root_domain}"
+    parameter name: 'DnsDomain', value: "#{root_domain}"
     parameter name: 'AsgMin', value: '1'
     parameter name: 'AsgMax', value: '2'
     parameter name: 'InstanceType', value: "#{ecs_instance_type}"
@@ -78,7 +80,7 @@ CfhighlanderTemplate do
   end
   
   Component template: 'github:base2services/hl-component-ecs-service#security-groups.snapshot', name: 'jenkins', config: jenkins do
-    parameter name: 'EnvironmentName', value: ciinabox_name
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'NetworkPrefix', value: '10'
     parameter name: 'LoadBalancer', value: 'loadbalancer.LoadBalancer'
@@ -101,7 +103,7 @@ CfhighlanderTemplate do
   end
 
   Component template: 'github:base2services/hl-component-jenkins-ec2-agents#master.snapshot', name: 'ec2agents', config: ec2agents do
-    parameter name: 'EnvironmentName', value: ciinabox_name
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'S3Bucket', value: "#{source_bucket}"
     parameter name: 'VPCId', value: cfout('vpc.VPCId')

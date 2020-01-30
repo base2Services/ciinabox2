@@ -10,10 +10,10 @@ nat:
   size: t3.micro
   spot: 'true'
   ami: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs'
-  
 
 vpc:
   azs: 2
+  create_hosted_zone: true
   manage_ns_records: true
   vpc_cidr: 10.150.0.0/24
   subnet_mask: 27
@@ -22,6 +22,10 @@ vpc:
       enable: false
     cache:
       enable: false
+  dns_format: ${EnvironmentName}.${DnsDomain}
+  config_export:  
+    global:
+    - dns_format
 
 ecs:
   ami: '/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id'
