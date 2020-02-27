@@ -22,6 +22,36 @@ vpc:
       enable: false
     cache:
       enable: false
+  acl_rules:
+  -
+    acl: public
+    number: 110
+    from: 80
+    to: 80
+    protocol: 6
+    cidr: 0.0.0.0/0
+  -
+    acl: public
+    number: 120
+    from: 443
+    to: 443
+    protocol: 6
+    cidr: 0.0.0.0/0
+  -
+    acl: public
+    number: 130
+    from: 1024
+    to: 65535
+    protocol: 6
+    cidr: 0.0.0.0/0
+  -
+    acl: public
+    number: 210
+    from: 22
+    to: 22
+    protocol: 6
+    ips:
+    - webhooks
   dns_format: ${EnvironmentName}.${DnsDomain}
   config_export:  
     global:
