@@ -25,6 +25,13 @@ vpc:
   acl_rules:
   -
     acl: public
+    number: 80
+    from: 22
+    to: 22
+    protocol: 6
+    cidr: 0.0.0.0/0
+  -
+    acl: public
     number: 110
     from: 80
     to: 80
@@ -46,12 +53,24 @@ vpc:
     cidr: 0.0.0.0/0
   -
     acl: public
-    number: 210
-    from: 22
-    to: 22
-    protocol: 6
-    ips:
-    - webhooks
+    number: 100
+    from: 0
+    to: 65535
+    protocol: -1
+    egress: true
+  -
+    acl: private
+    number: 100
+    from: 0
+    to: 65535
+    protocol: -1
+  -
+    acl: private
+    number: 100
+    from: 0
+    to: 65535
+    protocol: -1
+    egress: true
   dns_format: ${EnvironmentName}.${DnsDomain}
   config_export:  
     global:
