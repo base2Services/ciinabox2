@@ -79,6 +79,16 @@ vpc:
 ecs:
   ami: '/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id'
   security_group_rules:
+    - from: 22
+      ip: ${VPCCidr}
+      desc: SSH access for packer baking
+    - from: 47001
+      ip: ${VPCCidr}
+      desc: WinRM TCP port for packer baking
+    - from: 5985
+      to: 5986
+      ip: ${VPCCidr}
+      desc: WinRM HTTP/S ports for packer baking
     - from: 2049
       ip: ${VPCCidr}
       desc: Allow EFS access from ECS tasks
