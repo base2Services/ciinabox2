@@ -327,6 +327,9 @@ ec2agents:
         - ssmmessages:CreateDataChannel
         - ssmmessages:OpenControlChannel
         - ssmmessages:OpenDataChannel
+    cloudformation:
+      action:
+        - cloudformation:ValidateTemplate
 
 config_export:
   global:
