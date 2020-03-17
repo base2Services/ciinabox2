@@ -49,7 +49,7 @@ CfhighlanderTemplate do
     parameter name: 'EnvironmentType', value: 'development'
   end
   
-  Component template: 'github:base2services/hl-component-jcasc-pipeline#master.snapshot', name: 'jcasc' do
+  Component template: 'github:base2services/hl-component-jcasc-pipeline#0.1.1', name: 'jcasc' do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VPC', value: cfout('vpc.VPCId')
@@ -60,7 +60,7 @@ CfhighlanderTemplate do
     parameter name: 'JenkinsUser', value: 'ciinabox'
   end
 
-  Component template: 'ecs-v2@master.snapshot', name: 'ecs', config: ecs do
+  Component template: 'ecs-v2@0.1.1', name: 'ecs', config: ecs do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'KeyName', value: cfout('keypair.KeyPair')
@@ -79,7 +79,7 @@ CfhighlanderTemplate do
     parameter name: 'ContainerInsights', value: 'disabled'
   end
   
-  Component template: 'github:base2services/hl-component-ecs-service#security-groups.snapshot', name: 'jenkins', config: jenkins do
+  Component template: 'ecs-service@2.8.2', name: 'jenkins', config: jenkins do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'NetworkPrefix', value: '10'
@@ -102,7 +102,7 @@ CfhighlanderTemplate do
     parameter name: 'JenkinsSecret', value: cfout('jcasc.JenkinsSecret')
   end
 
-  Component template: 'github:base2services/hl-component-jenkins-ec2-agents#master.snapshot', name: 'ec2agents', config: ec2agents do
+  Component template: 'github:base2services/hl-component-jenkins-ec2-agents#0.1.0', name: 'ec2agents', config: ec2agents do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'S3Bucket', value: "#{source_bucket}"
