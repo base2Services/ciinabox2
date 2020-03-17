@@ -38,7 +38,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'aws-sdk-ec2', '~> 1', '<2'
   spec.add_runtime_dependency 'aws-sdk-ecs', '~> 1', '<2'
   spec.add_runtime_dependency 'aws-sdk-route53', '~> 1', '<2'
-  spec.add_runtime_dependency 'aws-sdk-cloudformation', '~> 1', '<2'
+  spec.add_runtime_dependency 'aws-sdk-cloudformation', '~> 1.30', '<2'
   spec.add_runtime_dependency 'aws-sdk-codecommit', '~> 1', '<2'
   spec.add_runtime_dependency 'aws-sdk-codebuild', '~> 1', '<2'
 
