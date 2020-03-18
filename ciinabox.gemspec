@@ -32,7 +32,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "thor", "~> 0.19"
   spec.add_dependency "terminal-table", '~> 1', '<2'
-  spec.add_dependency 'cfhighlander', '~>0.10', '<1'
+  spec.add_dependency 'cfhighlander', '~>0.11.1', '<1'
   spec.add_runtime_dependency 'aws-sdk-core', '~> 3','<4'
   spec.add_runtime_dependency 'aws-sdk-s3', '~> 1', '<2'
   spec.add_runtime_dependency 'aws-sdk-ec2', '~> 1', '<2'
