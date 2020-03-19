@@ -255,6 +255,7 @@ jenkins:
     s3-list-ciinabox-bucket:
       action:
         - s3:ListBucket
+        - s3:GetBucketLocation
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}
     s3-rw:
@@ -307,6 +308,7 @@ ec2agents:
     s3-list-ciinabox-bucket:
       action:
         - s3:ListBucket
+        - s3:GetBucketLocation
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}
     s3-rw:
