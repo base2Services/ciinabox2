@@ -265,6 +265,7 @@ jenkins:
         - s3:PutObject
         - s3:PutObjectAcl
       resource:
+        - Fn::Sub: arn:aws:s3:::${S3Bucket}
         - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
     secretsmanager-list:
       action:
