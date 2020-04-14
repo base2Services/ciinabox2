@@ -333,6 +333,8 @@ ec2agents:
       action:
         - cloudformation:ValidateTemplate
 
+mfa: {}
+
 config_export:
   global:
     - maximum_availability_zones

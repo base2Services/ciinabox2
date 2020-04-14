@@ -49,7 +49,7 @@ CfhighlanderTemplate do
     parameter name: 'EnvironmentType', value: 'development'
   end
   
-  Component template: 'github:base2services/hl-component-jcasc-pipeline#0.1.1', name: 'jcasc' do
+  Component template: 'github:base2services/hl-component-jcasc-pipeline#0.1.2', name: 'jcasc' do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VPC', value: cfout('vpc.VPCId')
@@ -58,6 +58,11 @@ CfhighlanderTemplate do
     parameter name: 'JenkinsInternalUrl', value: "http://jenkins.#{ciinabox_name}.ciinabox:8080"
     parameter name: 'JenkinsExternalUrl', value: "https://jenkins.#{full_zone}/"
     parameter name: 'JenkinsUser', value: 'ciinabox'
+  end
+  
+  Component template: 'github:base2services/hl-component-assume-role-mfa#0.1.0', name: 'mfa', config: mfa do
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
+    parameter name: 'EnvironmentType', value: 'development'
   end
 
   Component template: 'ecs-v2@0.1.1', name: 'ecs', config: ecs do
