@@ -341,7 +341,7 @@ ciinabox_services:
     fargate: true
     desired_count: 1
     versions: 
-      selenium: 3.141.59-20200515
+      selenium: 3
     service:
       network_mode: awsvpc
       cpu: 512
