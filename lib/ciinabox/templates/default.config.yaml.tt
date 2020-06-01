@@ -335,6 +335,70 @@ ec2agents:
 
 mfa: {}
 
+ciinabox_services:
+  selenium:
+    enable: false
+    fargate: true
+    desired_count: 1
+    versions: 
+      selenium: 3.141.59-20200515
+    service:
+      network_mode: awsvpc
+      cpu: 512
+      memory: 1024
+      task_definition:
+        selenium-hub:
+          image: selenium/hub
+          tag_param: SeleniumVersion
+          ports:
+          - 4444
+        chrome:
+          image: selenium/node-chrome
+          tag_param: SeleniumVersion
+          env_vars:
+            HUB_HOST: localhost
+            HUB_PORT: 4444
+            START_XVFB: false
+        firefox:
+          image: selenium/node-firefox
+          tag_param: SeleniumVersion
+          env_vars:
+            HUB_HOST: localhost
+            HUB_PORT: 4444
+            START_XVFB: false
+            SE_OPTS: -port 5556
+      targetgroup:
+        name: selenium-hub
+        container: selenium-hub
+        port: 4444
+        protocol: http
+        listener: https
+        type: ip
+        healthcheck:
+          interval: 30
+          timeout: 10
+          healthy_count: 2
+          unhealthy_count: 10
+          path: /grid/console
+          code: 200
+        rules:
+          - name:  selenium
+            host: selenium.*
+            priority: 1010
+        attributes:
+          deregistration_delay.timeout_seconds: 10
+      service_discovery:
+        name: selenium
+        container_name: selenium-hub
+      iam_policies:
+        ec2-regions:
+          action:
+            - ec2:DescribeRegions
+      security_group_rules:
+        - from: 4444
+          ip: ${VPCCidr}
+          desc: selenium access from inside the vpc
+          
 config_export:
   global:
     - maximum_availability_zones

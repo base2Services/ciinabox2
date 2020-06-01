@@ -116,4 +116,36 @@ CfhighlanderTemplate do
     parameter name: 'Subnets', value: cfout('vpc.ComputeSubnets')
   end
   
+  ciinabox_services.each do |service,config|
+    
+    next if config.has_key?('enable') && !config['enable']
+    
+    versions = config.fetch('version', {})
+    
+    Component template: 'ecs-service@2.8.2', name: service, config: config['service'] do
+      parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
+      parameter name: 'EnvironmentType', value: 'development'
+      parameter name: 'NetworkPrefix', value: '10'
+      parameter name: 'LoadBalancer', value: cfout('loadbalancer.LoadBalancer')
+      parameter name: 'Listener', value: cfout('loadbalancer.httpsListener')
+      parameter name: 'MinimumHealthyPercent', value: 0
+      parameter name: 'MaximumPercent', value: 100
+      parameter name: 'DesiredCount', value: config.fetch('desired_count', 1)
+      parameter name: 'EnableScaling', value: 'false'
+      parameter name: 'DnsDomain', value: "#{root_domain}"
+      parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
+      parameter name: 'NamespaceId', value: cfout('servicediscovery.NamespaceId')
+      parameter name: 'EnableFargate', value: config.fetch('fargate', true)
+      parameter name: 'SecurityGroupBackplane', value: ''
+      parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
+      parameter name: 'TargetGroup', value: ''
+      
+      versions.each do |task,version| 
+        parameter name: "#{task.split(/[-,_]/).collect(&:capitalize).join('')}Version", value: version
+      end
+    
+    end
+    
+  end
+  
 end
