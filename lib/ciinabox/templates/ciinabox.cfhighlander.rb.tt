@@ -18,7 +18,7 @@ CfhighlanderTemplate do
     parameter name: 'NatInstancesSpot', value: nat['spot']
     parameter name: 'NatAmi', value: nat['ami']
     parameter name: 'CIDR', value: vpc['vpc_cidr']
-    parameter name: 'SubnetBits', value: '4'
+    parameter name: 'SubnetBits', value: 32 - vpc['subnet_mask']
   end
   
   full_zone = vpc['create_hosted_zone'] ? "#{ciinabox_name}.#{root_domain}" : "#{root_domain}"

@@ -16,7 +16,7 @@ vpc:
   create_hosted_zone: true
   manage_ns_records: true
   vpc_cidr: 10.150.0.0/24
-  subnet_mask: 27
+  subnet_mask: 28
   subnets:
     persistence:
       enable: false
