@@ -83,8 +83,8 @@ CfhighlanderTemplate do
     parameter name: 'LaunchTemplateVersion', value: 'latest'
     parameter name: 'ContainerInsights', value: 'disabled'
   end
-  
-  Component template: 'ecs-service@2.8.2', name: 'jenkins', config: jenkins do
+
+  Component template: 'ecs-service@2.11.0', name: 'jenkins', config: jenkins do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'NetworkPrefix', value: '10'
@@ -122,7 +122,7 @@ CfhighlanderTemplate do
     
     versions = config.fetch('version', {})
     
-    Component template: 'ecs-service@2.8.2', name: service, config: config['service'] do
+    Component template: 'ecs-service@2.11.0', name: service, config: config['service'] do
       parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
       parameter name: 'EnvironmentType', value: 'development'
       parameter name: 'NetworkPrefix', value: '10'

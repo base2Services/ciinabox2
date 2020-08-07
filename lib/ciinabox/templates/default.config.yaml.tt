@@ -241,6 +241,12 @@ jenkins:
     attributes:
       deregistration_delay.timeout_seconds: 10
   iam_policies:
+    create-spot-service-liked-role:
+      action:
+        - iam:CreateServiceLinkedRole
+      condition:
+        StringLike:
+          iam:AWSServiceName: spot.amazonaws.com
     cross-account-sts:
       action:
         - sts:AssumeRole
