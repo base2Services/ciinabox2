@@ -30,7 +30,7 @@ CfhighlanderTemplate do
     parameter name: 'CrossAccountDNSZoneIAMRole', value: ''
   end
 
-  Component template: 'application-loadbalancer@0.2.1', name: 'loadbalancer', config: loadbalancer do
+  Component template: 'application-loadbalancer@0.3.0', name: 'loadbalancer', config: loadbalancer do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'NetworkPrefix', value: '10'
