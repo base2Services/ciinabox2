@@ -332,6 +332,7 @@ jenkins:
         - s3:GetBucketLocation
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}
+        - Fn::Sub: arn:aws:s3:::${AWS::AccountId}.${AWS::Region}.cfhighlander.templates
     s3-rw:
       action:
         - s3:GetObject
@@ -341,6 +342,7 @@ jenkins:
         - s3:PutObjectAcl
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+        - Fn::Sub: arn:aws:s3:::${AWS::AccountId}.${AWS::Region}.cfhighlander.templates/*
     secretsmanager-list:
       action:
         - secretsmanager:ListSecrets
@@ -385,6 +387,7 @@ ec2agents:
         - s3:GetBucketLocation
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}
+        - Fn::Sub: arn:aws:s3:::${AWS::AccountId}.${AWS::Region}.cfhighlander.templates
     s3-rw:
       action:
         - s3:GetObject
@@ -394,6 +397,7 @@ ec2agents:
         - s3:PutObjectAcl
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+        - Fn::Sub: arn:aws:s3:::${AWS::AccountId}.${AWS::Region}.cfhighlander.templates/*
     ssm-ssh-access:
       action:
         - ssm:UpdateInstanceInformation
