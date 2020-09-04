@@ -41,6 +41,9 @@ module Ciinabox
       empty_directory @build_dir
       template('templates/ciinabox.cfhighlander.rb.tt', "#{@build_dir}/ciinabox.cfhighlander.rb", @config)
       template('templates/default.config.yaml.tt', "#{@build_dir}/ciinabox.config.yaml", @config)
+      if !@config.dig('internal_loadbalancer', 'enable').nil?  && @config['internal_loadbalancer']['enable'] == true
+        template('templates/internalloadbalancer.cfhighlander.rb.tt', "#{@build_dir}/internalloadbalancer.cfhighlander.rb", @config)
+      end
 
       Log.logger.debug "Generating cloudformation from #{@build_dir}/ciinabox.cfhighlander.rb"
       cfhl = Ciinabox::CfHighlander.new(@config,@build_dir)

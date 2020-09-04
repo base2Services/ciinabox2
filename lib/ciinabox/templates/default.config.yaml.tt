@@ -1,5 +1,4 @@
 ## ciinabox cfhighlander default config
-
 maximum_availability_zones: 3
 
 ecs_instance_type: t2.small
@@ -175,6 +174,54 @@ loadbalancer:
                 </body>
               </html> 
 
+internal_zone:
+  dns_domain: int.${RootDomainName}
+
+internal_loadbalancer:
+  enable: false
+  dns_format: ${DnsDomain}
+  use_zone_id: true
+  loadbalancer_scheme: internal
+  loadbalancer_attributes:
+    idle_timeout.timeout_seconds: 300  
+  records:
+  - "*.int"  
+  security_group_rules:
+  - from: 80
+    ip_blocks:
+      - internal
+  - from: 443
+    ip_blocks:
+      - internal
+  listeners:
+    inthttp:
+      port: 80
+      protocol: http
+      default:
+        action:
+          redirect: http_to_https
+    inthttps:
+      port: 443
+      protocol: https
+      ssl_policy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06
+      default:
+        certificate: website
+        action:
+          fixed:
+            type: text/html
+            code: 404
+            body: |
+              <!DOCTYPE html>
+              <html>
+                <body>
+                  <h2>404</h2>
+                  <h3><span id="demo" style="color: red"></span> ciinabox service not found</h3>
+                  <script>
+                  document.getElementById("demo").innerHTML = location.hostname;
+                  </script>
+                </body>
+              </html> 
+
 jenkins:
   network_mode: awsvpc
   health_check_grace_period: 300
@@ -221,7 +268,7 @@ jenkins:
             Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-master
           ReadOnly: false
   targetgroup:
-    name: jenkins
+  - name: jenkins
     container: jenkins
     port: 8080
     protocol: http
@@ -240,6 +287,27 @@ jenkins:
         priority: 1000
     attributes:
       deregistration_delay.timeout_seconds: 10
+  <%- if !@config.dig('internal_loadbalancer', 'enable').nil?  && @config['internal_loadbalancer']['enable'] == true -%>
+  - name: internaljenkins
+    container: jenkins
+    port: 8080
+    protocol: http
+    listener: inthttps
+    type: ip
+    healthcheck:
+      interval: 30
+      timeout: 10
+      healthy_count: 2
+      unhealthy_count: 10
+      path: /login
+      code: 200
+    rules:
+      - name:  internaljenkins
+        host: jenkins.*
+        priority: 1000
+    attributes:
+      deregistration_delay.timeout_seconds: 10
+  <%- end -%>  
   iam_policies:
     create-spot-service-liked-role:
       action:
