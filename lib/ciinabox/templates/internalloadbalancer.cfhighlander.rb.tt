@@ -20,7 +20,7 @@ CfhighlanderTemplate do
         parameter name: 'AlternativeNames', value: ''
     end
 
-    Component template: 'application-loadbalancer@0.3.0', name: 'intalb', config: internal_loadbalancer, render: Inline do
+    Component template: 'application-loadbalancer@0.3.1', name: 'intalb', config: internal_loadbalancer, render: Inline do
         parameter name: 'SslCertId', value: cfout('intcert.CertificateArn')
         parameter name: 'SubnetIds', value: Ref('SubnetIds')
         parameter name: 'VPCId', value: Ref('VPCId')
