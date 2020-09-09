@@ -45,7 +45,7 @@ CfhighlanderTemplate do
       parameter name: 'RootDomainName', value: "#{root_domain}."
       parameter name: 'CertDomain', value: "*.int.#{full_zone}"
       parameter name: 'DnsDomain', value: "#{full_zone}"
-      parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
+      parameter name: 'SubnetIds', value: cfout("vpc.#{internal_loadbalancer.fetch('subnet_group', 'Compute')}Subnets")
       parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
     end
   end
