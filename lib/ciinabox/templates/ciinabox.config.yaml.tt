@@ -5,12 +5,20 @@ region: <%= config[:setup][:region] %>
 root_domain: <%= config[:setup][:root_domain] %>
 source_bucket: <%= config[:setup][:source_bucket] %>
 
-ecs_instance_type: t2.small
+ecs_instance_type: t3a.small
 
 jenkins:
-  version: 2.235.1.2-b2
+  version: 2.235.5.1-b1
   cpu: 1024
   memory: 1536
+
+vpc:
+  vpc_cidr: 10.150.0.0/16
+  subnet_mask: 24
+<% if config[:setup][:create_subdomain] == false -%>
+  create_hosted_zone: false
+  dns_format: "${DnsDomain}"
+<% end -%>
 
 ip_blocks:
   webhooks:

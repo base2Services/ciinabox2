@@ -44,6 +44,14 @@ module Ciinabox
     def set_dns
       root_domain = ask "what hosted zone are you using?"
       @setup[:root_domain] = root_domain
+      create_subdomain = yes? "create subdomain from #{root_domain}? (y/n)"
+      @setup[:create_subdomain] = create_subdomain
+
+      if create_subdomain == true
+        say "ciinabox will create the subdomain #{name}.#{root_domain}", :green
+      else
+        say "ciinabox will use the #{root_domain} domain to create ciinabox DNS records", :green
+      end
     end
 
     def set_ip_whitelisting
@@ -58,7 +66,7 @@ module Ciinabox
     
     def git_init
       if yes?("git init ciinabox?")
-        run "git init #{@dir}"
+        run "git init #{@dir} (y/n)"
         template 'templates/gitignore.tt', "#{@dir}/.gitignore"
         template "templates/README.md.tt", "#{@dir}/README.md"
       else
