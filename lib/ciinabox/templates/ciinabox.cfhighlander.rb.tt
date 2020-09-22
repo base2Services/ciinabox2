@@ -3,14 +3,14 @@ CfhighlanderTemplate do
   ComponentDistribution "s3://#{source_bucket}/cloudformation/ciinabox/#{ciinabox_name}"
   ComponentVersion "#{Ciinabox::VERSION}"
     
-  Component template: 'vpc-v2@0.5.0', name: 'vpc', config: vpc do
+  Component template: 'vpc-v2@0.5.4', name: 'vpc', config: vpc do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
     parameter name: 'AvailabiltiyZones', value: vpc['azs']
     parameter name: 'NatGateways', value: nat['count']
     parameter name: 'NatGatewayEIPs', value: ''
-    parameter name: 'EnableTransitVPC', value: 'false'
+    parameter name: 'EnableTransitVPC', value: "#{vpc['enable_transit_vpc']}"
     parameter name: 'dnszoneAddNSRecords', value: 'true'
     parameter name: 'dnszoneParentIAMRole', value: ''
     parameter name: 'NatType', value: nat['type']
