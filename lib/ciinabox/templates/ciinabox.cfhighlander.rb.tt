@@ -7,7 +7,7 @@ CfhighlanderTemplate do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
-    parameter name: 'AvailabiltiyZones', value: vpc['azs']
+    parameter name: 'AvailabilityZones', value: vpc['azs']
     parameter name: 'NatGateways', value: nat['count']
     parameter name: 'NatGatewayEIPs', value: ''
     parameter name: 'EnableTransitVPC', value: "#{vpc['enable_transit_vpc']}"
