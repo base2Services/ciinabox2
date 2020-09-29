@@ -418,7 +418,7 @@ ciinabox_services:
     enable: false
     fargate: true
     desired_count: 1
-    versions: 
+    version: 
       selenium: 3
     service:
       network_mode: awsvpc
