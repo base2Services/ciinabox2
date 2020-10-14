@@ -142,6 +142,9 @@ CfhighlanderTemplate do
       parameter name: 'NetworkPrefix', value: '10'
       parameter name: 'LoadBalancer', value: cfout('loadbalancer.LoadBalancer')
       parameter name: 'Listener', value: cfout('loadbalancer.httpsListener')
+      if internal_loadbalancer['enable'] == true
+        parameter name: 'intListener', value: cfout('internalloadbalancer.inthttpsListener')
+      end
       parameter name: 'MinimumHealthyPercent', value: 0
       parameter name: 'MaximumPercent', value: 100
       parameter name: 'DesiredCount', value: config.fetch('desired_count', 1)
