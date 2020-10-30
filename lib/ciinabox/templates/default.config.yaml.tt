@@ -223,6 +223,7 @@ internal_loadbalancer:
               </html> 
 
 jenkins:
+  java_opts: ''
   network_mode: awsvpc
   health_check_grace_period: 300
   volumes:
@@ -255,6 +256,7 @@ jenkins:
             -Dhudson.TcpSlaveAgentListener.hostName=jenkins
             -Dhudson.TcpSlaveAgentListener.port=50000
             -Djenkins.install.runSetupWizard=false
+            <%= @config['jenkins']['java_opts'] %>
       secrets:
         secretsmanager:
           JENKINS_PASSWORD: /${EnvironmentName}/jenkins/admin/password
