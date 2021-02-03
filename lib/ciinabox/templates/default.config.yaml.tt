@@ -236,7 +236,7 @@ jenkins:
         Autoprovision: true
   task_definition:
     jenkins:
-      image: base2/jenkins-distribution
+      image: ghcr.io/base2services/jenkins-distribution
       tag_param: Version
       tag_param_default: latest
       env_vars:
