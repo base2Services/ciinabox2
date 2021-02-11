@@ -42,7 +42,7 @@ CfhighlanderTemplate do
     Component template: 'internalloadbalancer', name: 'internalloadbalancer' do
       parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
       parameter name: 'EnvironmentType', value: 'development'
-      parameter name: 'RootDomainName', value: "#{root_domain}."
+      parameter name: 'RootDomainName', value: "#{full_zone}."
       parameter name: 'CertDomain', value: "*.int.#{full_zone}"
       parameter name: 'DnsDomain', value: "#{full_zone}"
       parameter name: 'SubnetIds', value: cfout("vpc.#{internal_loadbalancer.fetch('subnet_group', 'Compute')}Subnets")
