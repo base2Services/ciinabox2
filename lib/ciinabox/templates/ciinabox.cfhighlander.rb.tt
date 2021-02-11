@@ -60,7 +60,7 @@ CfhighlanderTemplate do
     parameter name: 'EnvironmentType', value: 'development'
   end
   
-  Component template: 'github:base2services/hl-component-jcasc-pipeline#0.2.1', name: 'jcasc' do
+  Component template: 'github:base2services/hl-component-jcasc-pipeline#0.3.0', name: 'jcasc' do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VPC', value: cfout('vpc.VPCId')
