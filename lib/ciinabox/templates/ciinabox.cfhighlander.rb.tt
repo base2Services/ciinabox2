@@ -70,6 +70,12 @@ CfhighlanderTemplate do
     parameter name: 'JenkinsExternalUrl', value: "https://jenkins.#{full_zone}/"
     parameter name: 'JenkinsUser', value: 'ciinabox'
   end
+
+  Component template: 'github:base2services/hl-component-ciinabox-aws-backup#master.snapshot', name: 'backup' do
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
+    parameter name: 'EnvironmentType', value: 'development'
+    parameter name: 'CiinaboxTagValue', value: "/#{ciinabox_name}-ciinabox-jenkins-master"
+  end
   
   Component template: 'github:base2services/hl-component-assume-role-mfa#0.1.0', name: 'mfa', config: mfa do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
