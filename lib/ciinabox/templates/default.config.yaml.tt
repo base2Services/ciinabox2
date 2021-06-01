@@ -364,6 +364,11 @@ jenkins:
     ecr-mamange-repos:
       action:
         - ecr:*
+    codecommit:
+      action:
+        - codecommit:GitPull
+      resource:
+        - Fn::Sub: arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}*
   service_discovery:
     name: jenkins
     container_name: jenkins
