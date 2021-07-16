@@ -1,6 +1,6 @@
 FROM ruby:2.7-alpine
 
-ARG CIINABOX_VERSION
+ARG CIINABOX_VERSION='*'
 
 COPY . /src
 
