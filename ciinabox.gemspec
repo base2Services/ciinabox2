@@ -33,7 +33,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = '>= 2.7.0'
   spec.add_dependency "thor", "~> 0.19"
   spec.add_dependency "terminal-table", '~> 1', '<2'
-  spec.add_dependency 'cfhighlander', '~>0.11.1', '<1'
+  spec.add_dependency 'cfhighlander', '~>0.12', '<1'
   spec.add_runtime_dependency 'aws-sdk-core', '~> 3','<4'
   spec.add_runtime_dependency 'aws-sdk-s3', '~> 1', '<2'
   spec.add_runtime_dependency 'aws-sdk-ec2', '~> 1', '<2'
