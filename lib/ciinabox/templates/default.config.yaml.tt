@@ -264,7 +264,8 @@ jenkins:
           Fn::Sub: ${AWS::Region}
         CASC_JENKINS_CONFIG:
           Ref: JcascS3Path
-        PLUGINS_FORCE_UPGRADE: true
+        TRY_UPGRADE_IF_NO_MARKER: 'true'
+        PLUGINS_FORCE_UPGRADE: 'true'
         JAVA_OPTS: 
           Fn::Sub: >-
             -Dhudson.TcpSlaveAgentListener.hostName=jenkins.${EnvironmentName}.ciinabox 
