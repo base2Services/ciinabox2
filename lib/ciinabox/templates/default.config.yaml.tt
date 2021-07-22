@@ -371,8 +371,10 @@ jenkins:
     ssm-parameters:
       action:
         - ssm:GetParameter
+        - ssm:GetParametersByPath
       resource:
         - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/ciinabox/*
+        - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/aws/*
     sns-publish:
       action:
         - sns:Publish
