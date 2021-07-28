@@ -242,6 +242,10 @@ efs:
           OwnerUid: '1000'
           Permissions: '0755'
 
+jcasc:
+  image: <%= @config.dig('jenkin', 'image') || 'ghcr.io/base2services/jenkins-distribution' %>
+  tag: <%= @config.dig('jenkins', 'version') || 'lts' %>
+
 jenkins:
   cpu: 1024
   memory: 2048
@@ -259,6 +263,10 @@ jenkins:
     jenkins:
       image: <%= @config.dig('jenkin', 'image') || 'ghcr.io/base2services/jenkins-distribution' %>
       tag: <%= @config.dig('jenkins', 'version') || 'lts' %>
+      secrets:
+        secretsmanager:
+          JENKINS_PASSWORD: /${EnvironmentName}/jenkins/admin/password
+          JCASC_RELOAD_TOKEN: /${EnvironmentName}/jenkins/jcasc/reload-token
       env_vars:
         AWS_REGION:
           Fn::Sub: ${AWS::Region}

@@ -10,7 +10,7 @@ ecs_instance_type: t3a.small
 jenkins:
   version: 2.235.5.1-b1
   cpu: 1024
-  memory: 1536
+  memory: 2048
 
 vpc:
   vpc_cidr: 10.150.0.0/16

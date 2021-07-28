@@ -30,7 +30,7 @@ CfhighlanderTemplate do
     parameter name: 'CrossAccountDNSZoneIAMRole', value: ''
   end
 
-  Component template: 'application-loadbalancer@master.snapshot', name: 'loadbalancer', config: loadbalancer do
+  Component template: 'application-loadbalancer@0.4.2', name: 'loadbalancer', config: loadbalancer do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
@@ -60,7 +60,7 @@ CfhighlanderTemplate do
     parameter name: 'EnvironmentType', value: 'development'
   end
   
-  Component template: 'github:base2services/hl-component-jcasc-pipeline#0.3.2', name: 'jcasc' do
+  Component template: 'github:base2services/hl-component-jcasc-pipeline#1.0.0', name: 'jcasc', config: jcasc do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VPC', value: cfout('vpc.VPCId')
@@ -95,13 +95,7 @@ CfhighlanderTemplate do
     parameter name: 'ContainerInsights', value: 'disabled'
   end
 
-  Component template: 'github:base2services/hl-component-ciinabox-aws-backup#master.snapshot', name: 'backup' do
-    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
-    parameter name: 'EnvironmentType', value: 'development'
-    parameter name: 'CiinaboxTagValue', value: "/#{ciinabox_name}-ciinabox-jenkins-master"
-  end
-
-  Component template: 'github:base2services/hl-component-ciinabox-efs#master.snapshot', name: 'efs', config: efs do
+  Component template: 'github:base2services/hl-component-ciinabox-efs#0.1.0', name: 'efs', config: efs do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VolumeName', value: "/#{ciinabox_name}-ciinabox-jenkins-master"
