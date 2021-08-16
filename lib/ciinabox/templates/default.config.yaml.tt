@@ -1,6 +1,5 @@
 ## ciinabox cfhighlander default config
 maximum_availability_zones: 3
-jenkins_container_service: ECS # ECS | FARGATE
 ecs_instance_type: t2.small
 
 nat: 
