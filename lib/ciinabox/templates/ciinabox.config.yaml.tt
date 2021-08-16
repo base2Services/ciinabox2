@@ -8,7 +8,7 @@ source_bucket: <%= config[:setup][:source_bucket] %>
 ecs_instance_type: t3a.small
 
 jenkins:
-  version: 2.235.5.1-b1
+  version: lts
   cpu: 1024
   memory: 2048
 
