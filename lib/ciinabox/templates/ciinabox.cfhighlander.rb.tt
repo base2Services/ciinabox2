@@ -105,7 +105,7 @@ CfhighlanderTemplate do
     parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
   end
 
-  Component template: 'fargate-v2@master.snapshot', name: 'jenkins', config: jenkins do
+  Component template: 'fargate-v2@0.5.7', name: 'jenkins', config: jenkins do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VPCId', value: cfout('vpc.VPCId')
@@ -174,3 +174,5 @@ CfhighlanderTemplate do
   end
   
 end
+
+0.007 + 0.025
