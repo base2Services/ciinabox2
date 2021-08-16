@@ -243,7 +243,7 @@ efs:
           Permissions: '0755'
 
 jcasc:
-  image: <%= @config.dig('jenkin', 'image') || 'ghcr.io/base2services/jenkins-distribution' %>
+  image: <%= @config.dig('jenkins', 'image') || 'ghcr.io/base2services/jenkins-distribution' %>
   tag: <%= @config.dig('jenkins', 'version') || 'lts' %>
 
 jenkins:
@@ -261,7 +261,7 @@ jenkins:
           Ref: JenkinsFileSystem
   task_definition:
     jenkins:
-      image: <%= @config.dig('jenkin', 'image') || 'ghcr.io/base2services/jenkins-distribution' %>
+      image: <%= @config.dig('jenkins', 'image') || 'ghcr.io/base2services/jenkins-distribution' %>
       tag: <%= @config.dig('jenkins', 'version') || 'lts' %>
       secrets:
         secretsmanager:
