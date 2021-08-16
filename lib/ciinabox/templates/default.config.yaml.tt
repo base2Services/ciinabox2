@@ -406,13 +406,16 @@ jenkins:
     container_name: jenkins
   ingress_rules:
     - from: 2049
-      cidr: ${VPCCidr}
+      cidr: 
+        Fn::Sub: ${VPCCidr}
       desc: Jenkins efs volume
     - from: 8080
-      cidr: ${VPCCidr}
+      cidr: 
+       Fn::Sub: ${VPCCidr}
       desc: HTTP access from the public facing loadbalancer
     - from: 50000
-      cidr: ${VPCCidr}
+      cidr: 
+        Fn::Sub: ${VPCCidr}
       desc: Access from inbound Jenkins agents
 
 ec2agents:
