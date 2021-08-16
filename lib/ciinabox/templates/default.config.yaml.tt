@@ -386,10 +386,10 @@ jenkins:
     sns-publish:
       action:
         - sns:Publish
-    ecr-mamange-repos:
+    ecr-manange-repos:
       action:
         - ecr:*
-    codeartifact-mamange-repos:
+    codeartifact-manange-repos:
       action:
         - codeartifact:*
     codecommit-pull:
@@ -423,7 +423,7 @@ ec2agents:
     sts:
       action:
         - sts:AssumeRole
-    ecr-mamange-repos:
+    ecr-manange-repos:
       action:
         - ecr:*
     s3-list-ciinabox-bucket:
