@@ -30,7 +30,7 @@ CfhighlanderTemplate do
     parameter name: 'CrossAccountDNSZoneIAMRole', value: ''
   end
 
-  Component template: 'application-loadbalancer@master.snapshot', name: 'loadbalancer', config: loadbalancer do
+  Component template: 'application-loadbalancer@0.4.2', name: 'loadbalancer', config: loadbalancer do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
@@ -60,7 +60,7 @@ CfhighlanderTemplate do
     parameter name: 'EnvironmentType', value: 'development'
   end
   
-  Component template: 'github:base2services/hl-component-jcasc-pipeline#0.3.1', name: 'jcasc' do
+  Component template: 'github:base2services/hl-component-jcasc-pipeline#1.0.0', name: 'jcasc', config: jcasc do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VPC', value: cfout('vpc.VPCId')
@@ -69,12 +69,6 @@ CfhighlanderTemplate do
     parameter name: 'JenkinsInternalUrl', value: "http://jenkins.#{ciinabox_name}.ciinabox:8080"
     parameter name: 'JenkinsExternalUrl', value: "https://jenkins.#{full_zone}/"
     parameter name: 'JenkinsUser', value: 'ciinabox'
-  end
-
-  Component template: 'github:base2services/hl-component-ciinabox-aws-backup#master.snapshot', name: 'backup' do
-    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
-    parameter name: 'EnvironmentType', value: 'development'
-    parameter name: 'CiinaboxTagValue', value: "/#{ciinabox_name}-ciinabox-jenkins-master"
   end
   
   Component template: 'github:base2services/hl-component-assume-role-mfa#0.1.0', name: 'mfa', config: mfa do
@@ -101,27 +95,35 @@ CfhighlanderTemplate do
     parameter name: 'ContainerInsights', value: 'disabled'
   end
 
-  Component template: 'ecs-service@2.12.0', name: 'jenkins', config: jenkins do
+  Component template: 'github:base2services/hl-component-ciinabox-efs#0.1.0', name: 'efs', config: efs do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
-    parameter name: 'NetworkPrefix', value: '10'
+    parameter name: 'VolumeName', value: "/#{ciinabox_name}-ciinabox-jenkins-master"
+    parameter name: 'VPCId', value: cfout('vpc.VPCId')
+    parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
+    parameter name: 'AvailabilityZones', value: vpc['azs']
+    parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
+  end
+
+  Component template: 'fargate-v2@0.5.7', name: 'jenkins', config: jenkins do
+    parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
+    parameter name: 'EnvironmentType', value: 'development'
+    parameter name: 'VPCId', value: cfout('vpc.VPCId')
+    parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
+    parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
+    parameter name: 'DnsDomain', value: "#{root_domain}"
     parameter name: 'LoadBalancer', value: cfout('loadbalancer.LoadBalancer')
+    parameter name: 'TargetGroup', value: ''
     parameter name: 'httpsListener', value: cfout('loadbalancer.httpsListener')
     parameter name: 'MinimumHealthyPercent', value: 0
     parameter name: 'MaximumPercent', value: 100
-    parameter name: 'DesiredCount', value: 1
+    parameter name: 'DesiredCount', value: jenkins.fetch('desired_count', 1)
     parameter name: 'EnableScaling', value: 'false'
-    parameter name: 'DnsDomain', value: "#{root_domain}"
-    parameter name: 'SubnetIds', value: cfout('vpc.ComputeSubnets')
-    parameter name: 'NamespaceId', value: cfout('servicediscovery.NamespaceId')
-    parameter name: 'S3Bucket', value: "#{source_bucket}"
-    parameter name: 'Version', value: "#{jenkins['version']}"
     parameter name: 'JcascS3Path', value: cfout('jcasc.FileLocation')
-    parameter name: 'EnableFargate', value: 'false'
-    parameter name: 'SecurityGroupBackplane', value: ''
-    parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
-    parameter name: 'TargetGroup', value: ''
-    parameter name: 'JenkinsSecret', value: cfout('jcasc.JenkinsSecret')
+    parameter name: 'S3Bucket', value: "#{source_bucket}"
+    parameter name: 'NamespaceId', value: cfout('servicediscovery.NamespaceId')
+    parameter name: 'JenkinsFileSystem', value: cfout('efs.FileSystem')
+    parameter name: 'JenkinsHomeAccessPoint', value: cfout('efs.JenkinsHomeAccessPoint')
     if internal_loadbalancer['enable'] == true
       parameter name: 'inthttpsListener', value: cfout('internalloadbalancer.inthttpsListener')
     end

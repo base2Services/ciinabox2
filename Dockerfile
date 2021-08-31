@@ -1,6 +1,6 @@
 FROM ruby:2.7-alpine
 
-ARG CIINABOX_VERSION
+ARG CIINABOX_VERSION='*'
 
 COPY . /src
 
@@ -15,7 +15,7 @@ RUN gem build ciinabox.gemspec && \
     gem install ciinabox-${CIINABOX_VERSION}.gem && \
     rm -rf /src
     
-RUN cfndsl -u 11.0.0
+RUN cfndsl -u 39.3.0
 
 WORKDIR /work
 

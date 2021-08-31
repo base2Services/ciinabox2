@@ -9,6 +9,8 @@ module Ciinabox
   class CfHighlander
     include Ciinabox::Log
 
+    INLINED_TEMPLATES = ["jenkinsTask"]
+
     def initialize(config, build_dir)
       @config = config
       @build_dir = build_dir
@@ -22,6 +24,8 @@ module Ciinabox
       component = load_component()
       Log.logger.debug "compiling cfhighlander templates into cloudformation"
       compiler = compile_component(component)
+      Log.logger.debug "removing inlined templates"
+      INLINED_TEMPLATES.each {|t| compiler.cfn_template_paths.delete("#{@build_dir}/out/yaml/#{t}.compiled.yaml")}
       Log.logger.debug "Validating compiled cloudformation templates"
       validate_component(component,compiler.cfn_template_paths)
       return compiler

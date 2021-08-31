@@ -1,6 +1,5 @@
 ## ciinabox cfhighlander default config
 maximum_availability_zones: 3
-
 ecs_instance_type: t2.small
 
 nat: 
@@ -76,6 +75,7 @@ vpc:
     - dns_format
 
 ecs:
+  fargate_only_cluster: true
   ami: '/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id'
   security_group_rules:
     - from: 22
@@ -222,53 +222,75 @@ internal_loadbalancer:
                 </body>
               </html> 
 
+efs:
+  security_group_rules:
+    -
+      from: 2049
+      ip: ${VPCCidr}
+      desc: vpc access to the efs file system
+  access_points:
+    -
+      name: JenkinsHome
+      posix_user:
+        Gid: '1000'
+        Uid: '1000'
+      root_directory:
+        Path: /var/jenkins_home
+        CreationInfo:
+          OwnerGid: '1000'
+          OwnerUid: '1000'
+          Permissions: '0755'
+
+jcasc:
+  image: <%= @config.dig('jenkins', 'image') || 'ghcr.io/base2services/jenkins-distribution' %>
+  tag: <%= @config.dig('jenkins', 'version') || 'lts' %>
+
 jenkins:
-  java_opts: ''
-  network_mode: awsvpc
+  cpu: 1024
+  memory: 2048
   health_check_grace_period: 300
   volumes:
-    - docker-socket:/var/run/docker.sock
-    - Name:
-        Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-master
-      DockerVolumeConfiguration:
-        Driver: rexray/efs
-        Scope: shared
-        Autoprovision: true
+    - Name: 'jenkins-data'
+      EFSVolumeConfiguration:
+        AuthorizationConfig:
+          AccessPointId:
+            Ref: JenkinsHomeAccessPoint
+        TransitEncryption: ENABLED
+        FilesystemId:
+          Ref: JenkinsFileSystem
   task_definition:
     jenkins:
-      image: ghcr.io/base2services/jenkins-distribution
-      tag_param: Version
-      tag_param_default: latest
+      image: <%= @config.dig('jenkins', 'image') || 'ghcr.io/base2services/jenkins-distribution' %>
+      tag: <%= @config.dig('jenkins', 'version') || 'lts' %>
+      secrets:
+        secretsmanager:
+          JENKINS_PASSWORD: /${EnvironmentName}/jenkins/admin/password
+          JCASC_RELOAD_TOKEN: /${EnvironmentName}/jenkins/jcasc/reload-token
       env_vars:
-        ENVIRONMENT_NAME:
-          Fn::Sub: ${EnvironmentName}
         AWS_REGION:
           Fn::Sub: ${AWS::Region}
         CASC_JENKINS_CONFIG:
           Ref: JcascS3Path
+        TRY_UPGRADE_IF_NO_MARKER: 'true'
+        PLUGINS_FORCE_UPGRADE: 'true'
         JAVA_OPTS: 
           Fn::Sub: >-
             -Dhudson.TcpSlaveAgentListener.hostName=jenkins.${EnvironmentName}.ciinabox 
             -Dhudson.TcpSlaveAgentListener.port=50000
-            -Dcb.BeekeeperProp.noFullUpgrade=true
-            -Dcb.BeekeeperProp.disableIncrementalWizard=true
-            -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.allRequired=true
             -Dhudson.TcpSlaveAgentListener.hostName=jenkins
             -Dhudson.TcpSlaveAgentListener.port=50000
             -Djenkins.install.runSetupWizard=false
-            <%= @config['jenkins']['java_opts'] %>
-      secrets:
-        secretsmanager:
-          JENKINS_PASSWORD: /${EnvironmentName}/jenkins/admin/password
+            -Djenkins.security.ManagePermission=true
+            -Djenkins.security.SystemReadPermission=true
+            -Dhudson.security.ExtendedReadPermission=true
+            <%= @config.dig('jenkins', 'java_opts') || '' %>
       ports:
       - 8080
       - 50000
+      - 2049
       mounts:
-        - /var/run/docker.sock:docker-socket
-        - ContainerPath: /var/cloudbees-jenkins-distribution
-          SourceVolume:
-            Fn::Sub: ${EnvironmentName}-ciinabox-jenkins-master
-          ReadOnly: false
+        - ContainerPath: '/var/jenkins_home'
+          SourceVolume: 'jenkins-data'
   targetgroup:
   - name: jenkins
     container: jenkins
@@ -286,11 +308,11 @@ jenkins:
     rules:
       - name:  jenkins
         host: jenkins.*
-        priority: 1000
+        priority: 500
     attributes:
       deregistration_delay.timeout_seconds: 10
   <%- if !@config.dig('internal_loadbalancer', 'enable').nil?  && @config['internal_loadbalancer']['enable'] == true -%>
-  - name: internaljenkins
+  - name: internalJenkinsfargate
     container: jenkins
     port: 8080
     protocol: http
@@ -306,7 +328,7 @@ jenkins:
     rules:
       - name:  internaljenkins
         host: jenkins.*
-        priority: 1000
+        priority: 500
     attributes:
       deregistration_delay.timeout_seconds: 10
   <%- end -%>  
@@ -356,36 +378,51 @@ jenkins:
     ssm-parameters:
       action:
         - ssm:GetParameter
+        - ssm:GetParametersByPath
       resource:
         - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/ciinabox/*
+        - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/aws/*
     sns-publish:
       action:
         - sns:Publish
-    ecr-mamange-repos:
+    ecr-manange-repos:
       action:
         - ecr:*
-    codecommit:
+    codeartifact-manange-repos:
       action:
+        - codeartifact:*
+    codecommit-pull:
+      action:
+        - codecommit:BatchGet*
+        - codecommit:BatchDescribe*
+        - codecommit:Describe*
+        - codecommit:EvaluatePullRequestApprovalRules
+        - codecommit:Get*
+        - codecommit:List*
         - codecommit:GitPull
-      resource:
-        - Fn::Sub: arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}*
   service_discovery:
     name: jenkins
     container_name: jenkins
-  security_group_rules:
+  ingress_rules:
+    - from: 2049
+      cidr: 
+        Fn::Sub: ${VPCCidr}
+      desc: Jenkins efs volume
     - from: 8080
-      ip: ${VPCCidr}
-      desc: HTTP access from inside the vpc
+      cidr: 
+       Fn::Sub: ${VPCCidr}
+      desc: HTTP access from the public facing loadbalancer
     - from: 50000
-      ip: ${VPCCidr}
-      desc: Access from jenkins agents inside the vpc
+      cidr: 
+        Fn::Sub: ${VPCCidr}
+      desc: Access from inbound Jenkins agents
 
 ec2agents:
   iam_policies:
     sts:
       action:
         - sts:AssumeRole
-    ecr-mamange-repos:
+    ecr-manange-repos:
       action:
         - ecr:*
     s3-list-ciinabox-bucket:
