@@ -1,7 +1,8 @@
 # Ciinabox
 ---
 
-![build-status](https://travis-ci.com/ciinabox/ciinabox.svg?branch=master)
+![Image Release](https://github.com/base2Services/ciinabox2/actions/workflows/release-image.yml/badge.svg)
+![Gem Release](https://github.com/base2Services/ciinabox2/actions/workflows/release-gem.yml/badge.svg)
 
 Tool to create and manage ciinaboxes
 
