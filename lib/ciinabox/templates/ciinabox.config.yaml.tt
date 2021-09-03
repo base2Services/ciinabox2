@@ -20,16 +20,15 @@ vpc:
   dns_format: "${DnsDomain}"
 <% end -%>
 
-ip_blocks:
-  webhooks:
-    - 104.192.143.192/28 #github
-    - 104.192.143.208/28 #github
-    - 18.205.93.0/25 #bitbucket outbound for hook
-    - 18.234.32.128/25 #bitbucket outbound for hook
-    - 13.52.5.0/25 #bitbucket outbound for hook
 <% if config[:setup][:ip_whitelist].any? -%>
-  whitelist:
+loadbalancer:
+  security_group_rules:
   <% config[:setup][:ip_whitelist].each do |ip| -%>
-    - <%= ip %>
+  - from: 80
+    ip: <%= ip %>
+    desc: ciinabox whitelist http access
+  - from: 443
+    ip: <%= ip %>
+    desc: ciinabox whitelist https access
   <% end -%>
 <% end -%>

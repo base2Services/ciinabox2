@@ -131,20 +131,7 @@ loadbalancer:
   loadbalancer_attributes:
     idle_timeout.timeout_seconds: 300  
   records:
-  - "*"  
-  security_group_rules:
-  - from: 80
-    ip_blocks:
-      - whitelist
-    desc: ciinabox whitelist
-  - from: 443
-    ip_blocks:
-      - whitelist
-    desc: ciinabox whitelist
-  - from: 443
-    ip_blocks:
-      - webhooks
-    desc: Github and bitbucket webhooks
+  - "*" 
   listeners:
     http:
       port: 80
