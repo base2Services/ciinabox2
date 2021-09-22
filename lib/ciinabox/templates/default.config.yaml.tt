@@ -390,6 +390,43 @@ jenkins:
         - codecommit:Get*
         - codecommit:List*
         - codecommit:GitPull
+    ecs-manage-tasks:
+      - action:
+          - ecs:RunTask
+          - ecs:DescribeTasks
+          - ecs:RegisterTaskDefinition
+          - ecs:ListClusters
+          - ecs:DescribeContainerInstances
+          - ecs:ListTaskDefinitions
+          - ecs:DescribeTaskDefinition
+          - ecs:DeregisterTaskDefinition
+      - action:
+          - "ecs:ListContainerInstances"
+          - "ecs:DescribeClusters"
+        resource:
+          - Fn::Sub: "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${EcsCluster}"
+      - action:
+          - "ecs:RunTask"
+        condition:
+          ArnEquals:
+            ecs:cluster:
+              - Fn::Sub: "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${EcsCluster}"
+        resource: 
+          - Fn::Sub: "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*"
+      - action:
+          - "ecs:StopTask"
+        condition:
+          ArnEquals:
+            ecs:cluster:
+              - Fn::Sub: "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${EcsCluster}"
+        resource: "arn:aws:ecs:*:*:task/*"
+      - action:
+            - "ecs:DescribeTasks"
+        condition:
+          ArnEquals:
+            ecs:cluster:
+              - Fn::Sub: "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${EcsCluster}"
+        resource: "arn:aws:ecs:*:*:task/*"
     inspector-scan:
       - action:
         - inspector:PreviewAgents
