@@ -478,6 +478,11 @@ jenkins:
         - cloudformation:UntagResource
         - cloudformation:UpdateTerminationProtection
         - cloudformation:ValidateTemplate
+    route53:
+      action:
+       - route53:ChangeResourceRecordSets
+       - route53:ListResourceRecordSets
+       - route53:ListHostedZonesByName
   service_discovery:
     name: jenkins
     container_name: jenkins
