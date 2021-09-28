@@ -13,8 +13,8 @@ vpc:
   azs: 2
   create_hosted_zone: true
   manage_ns_records: true
-  vpc_cidr: 10.150.0.0/24
-  subnet_mask: 28
+  vpc_cidr: 10.150.0.0/16
+  subnet_mask: 24
   subnets:
     persistence:
       enable: false
