@@ -582,6 +582,9 @@ ec2agents:
       action:
         - iam:PassRole
         - iam:ListInstanceProfiles
+    cloudwatch:
+      action:
+        - cloudwatch:PutMetricData
 
 mfa: {}
 
