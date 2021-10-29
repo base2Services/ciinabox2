@@ -538,7 +538,7 @@ ec2agents:
       action:
         - cloudformation:ValidateTemplate
     packer:
-      actions:
+      action:
         - ec2:AttachVolume
         - ec2:AuthorizeSecurityGroupIngress
         - ec2:CopyImage
