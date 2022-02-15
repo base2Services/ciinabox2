@@ -95,7 +95,7 @@ CfhighlanderTemplate do
     parameter name: 'ContainerInsights', value: 'disabled'
   end
 
-  Component template: 'github:base2services/hl-component-ciinabox-efs#0.1.0', name: 'efs', config: efs do
+  Component template: 'github:base2services/hl-component-ciinabox-efs#0.1.1', name: 'efs', config: efs do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VolumeName', value: "/#{ciinabox_name}-ciinabox-jenkins-master"
