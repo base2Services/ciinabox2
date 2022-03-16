@@ -129,13 +129,15 @@ CfhighlanderTemplate do
     end
   end
 
-  Component template: 'github:base2services/hl-component-jenkins-ec2-agents#0.2.0', name: 'ec2agents', config: ec2agents do
+  Component template: 'github:base2services/hl-component-jenkins-ec2-agents#0.3.1', name: 'ec2agents', config: ec2agents do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'S3Bucket', value: "#{source_bucket}"
     parameter name: 'VPCId', value: cfout('vpc.VPCId')
     parameter name: 'JenkinsMasterSecurityGroup', value: cfout('jenkins.SecurityGroup')
     parameter name: 'Subnets', value: cfout('vpc.ComputeSubnets')
+    parameter name: 'JenkinsFileSystem', value: cfout('efs.FileSystem')
+    parameter name: 'JenkinsAgentCacheAccessPoint', value: cfout('efs.JenkinsAgentCacheAccessPoint')
   end
   
   ciinabox_services.each do |service,config|

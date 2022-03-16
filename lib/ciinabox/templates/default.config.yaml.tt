@@ -227,6 +227,17 @@ efs:
           OwnerGid: '1000'
           OwnerUid: '1000'
           Permissions: '0755'
+    -
+      name: JenkinsAgentCache
+      posix_user:
+        Gid: '1000'
+        Uid: '1000'
+      root_directory:
+        Path: /cache/jenkins
+        CreationInfo:
+          OwnerGid: '1000'
+          OwnerUid: '1000'
+          Permissions: '0755'
 
 jcasc:
   image: <%= @config.dig('jenkins', 'image') || 'ghcr.io/base2services/jenkins-distribution' %>
