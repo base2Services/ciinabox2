@@ -589,10 +589,11 @@ ec2agents:
         - ec2:DescribeSpotPriceHistory
         - ec2:DescribeVpcs
         - ec2:DescribeRegions
+        - iam:ListInstanceProfiles
+        - iam:GetInstanceProfile
     iam-pass-role:
       action:
         - iam:PassRole
-        - iam:ListInstanceProfiles
     cloudwatch:
       action:
         - cloudwatch:PutMetricData
