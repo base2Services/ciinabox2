@@ -494,6 +494,9 @@ jenkins:
        - route53:ChangeResourceRecordSets
        - route53:ListResourceRecordSets
        - route53:ListHostedZonesByName
+    cloudwatch-metrics:
+      action:
+        - cloudwatch:PutMetricData
   service_discovery:
     name: jenkins
     container_name: jenkins
