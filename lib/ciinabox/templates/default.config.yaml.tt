@@ -440,25 +440,25 @@ jenkins:
         resource: "arn:aws:ecs:*:*:task/*"
     inspector-scan:
       - action:
-        - inspector:PreviewAgents
-        - inspector:StartAssessmentRun
         - inspector:GetAssessmentReport
+        - inspector:CreateAssessmentTarget
+        - inspector:PreviewAgents
+        - inspector:DeleteAssessmentTarget
+        - inspector:StartAssessmentRun
+        - inspector:DeleteAssessmentTemplate
+        - inspector:CreateAssessmentTemplate
+        - inspector:ListFindings
         - inspector:DescribeAssessmentRuns
+        - inspector:CreateResourceGroup
+        - inspector:DescribeResourceGroups
+        - inspector:DescribeFindings
+        - inspector:DescribeAssessmentTargets
+        - inspector:DescribeAssessmentTemplates
       - action:
         - s3:CreateBucket
         - s3:DeleteBucket
         resource:
         - "arn:aws:s3:::inspectortestbucket*"
-      - action:
-        - s3:CreateBucket
-        - s3:DeleteBucket
-        resource:
-        - "arn:aws:s3:::inspectortestbucket*"
-      - action:
-        - s3:PutObject
-        - s3:DeleteObject
-        resource:
-        - "arn:aws:s3:::inspectortestbucket*/*"
       - action:
         - s3:PutObject
         - s3:DeleteObject
