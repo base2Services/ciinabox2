@@ -454,6 +454,9 @@ jenkins:
         - inspector:DescribeFindings
         - inspector:DescribeAssessmentTargets
         - inspector:DescribeAssessmentTemplates
+        - inspector:StopAssessmentRun
+        - inspector:ListTagsForResource
+        - inspector:SetTagsForResource
       - action:
         - s3:CreateBucket
         - s3:DeleteBucket
