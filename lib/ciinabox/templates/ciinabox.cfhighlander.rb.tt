@@ -3,7 +3,7 @@ CfhighlanderTemplate do
   ComponentDistribution "s3://#{source_bucket}/cloudformation/ciinabox/#{ciinabox_name}"
   ComponentVersion "#{Ciinabox::VERSION}"
     
-  Component template: 'vpc-v2@0.5.4', name: 'vpc', config: vpc do
+  Component template: 'vpc-v2@0.9.0', name: 'vpc', config: vpc do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
@@ -23,7 +23,7 @@ CfhighlanderTemplate do
   
   full_zone = vpc['create_hosted_zone'] ? "#{ciinabox_name}.#{root_domain}" : "#{root_domain}"
   
-  Component template: 'acm@1.2.0', name: 'acm' do
+  Component template: 'acm@1.4.0', name: 'acm' do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DomainName', value: "*.#{full_zone}"
@@ -50,7 +50,7 @@ CfhighlanderTemplate do
     end
   end
 
-  Component template: 'keypair@1.0.0', name: 'keypair' do
+  Component template: 'keypair@1.1.0', name: 'keypair' do
     parameter name: 'KeyPairName', value: "#{ciinabox_name}"
     parameter name: 'SSMParameterPath', value: "/ciinabox/keypair"
   end
