@@ -162,7 +162,8 @@ loadbalancer:
               </html> 
 
 internal_zone:
-  dns_domain: int.${RootDomainName}
+  dns_domain: 
+    Fn::Sub: int.${RootDomainName}
 
 internal_loadbalancer:
   enable: false
