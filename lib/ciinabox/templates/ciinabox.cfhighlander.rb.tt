@@ -71,7 +71,7 @@ CfhighlanderTemplate do
     parameter name: 'JenkinsUser', value: 'ciinabox'
   end
   
-  Component template: 'github:base2services/hl-component-assume-role-mfa#0.1.0', name: 'mfa', config: mfa do
+  Component template: 'github:base2services/hl-component-assume-role-mfa#0.2.0', name: 'mfa', config: mfa do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
   end
