@@ -477,6 +477,7 @@ jenkins:
         - cloudformation:DescribeChangeSet
         - cloudformation:DescribeStackEvents
         - cloudformation:DescribeStacks
+        - cloudformation:ListStacks
         - cloudformation:DescribeStackResource
         - cloudformation:DescribeStackResources
         - cloudformation:ExecuteChangeSet
