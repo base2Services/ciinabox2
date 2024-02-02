@@ -3,7 +3,7 @@ CfhighlanderTemplate do
   ComponentDistribution "s3://#{source_bucket}/cloudformation/ciinabox/#{ciinabox_name}"
   ComponentVersion "#{Ciinabox::VERSION}"
     
-  Component template: 'vpc-v2@0.9.0', name: 'vpc', config: vpc do
+  Component template: 'vpc-v2@0.10.2', name: 'vpc', config: vpc do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
@@ -23,14 +23,14 @@ CfhighlanderTemplate do
   
   full_zone = vpc['create_hosted_zone'] ? "#{ciinabox_name}.#{root_domain}" : "#{root_domain}"
   
-  Component template: 'acm@1.4.0', name: 'acm' do
+  Component template: 'acm@1.4.4', name: 'acm' do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DomainName', value: "*.#{full_zone}"
     parameter name: 'CrossAccountDNSZoneIAMRole', value: ''
   end
 
-  Component template: 'application-loadbalancer@0.4.2', name: 'loadbalancer', config: loadbalancer do
+  Component template: 'application-loadbalancer@0.5.0', name: 'loadbalancer', config: loadbalancer do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
@@ -50,17 +50,17 @@ CfhighlanderTemplate do
     end
   end
 
-  Component template: 'keypair@1.1.0', name: 'keypair' do
+  Component template: 'keypair@1.2.1', name: 'keypair' do
     parameter name: 'KeyPairName', value: "#{ciinabox_name}"
     parameter name: 'SSMParameterPath', value: "/ciinabox/keypair"
   end
 
-  Component template: 'service-discovery@0.1.0', name: 'servicediscovery', config: { namespace: "${EnvironmentName}.ciinabox" } do
+  Component template: 'service-discovery@0.1.1', name: 'servicediscovery', config: { namespace: "${EnvironmentName}.ciinabox" } do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
   end
   
-  Component template: 'github:base2services/hl-component-jcasc-pipeline#1.0.0', name: 'jcasc', config: jcasc do
+  Component template: 'github:base2services/hl-component-jcasc-pipeline#1.1.0', name: 'jcasc', config: jcasc do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VPC', value: cfout('vpc.VPCId')
@@ -76,7 +76,7 @@ CfhighlanderTemplate do
     parameter name: 'EnvironmentType', value: 'development'
   end
 
-  Component template: 'ecs-v2@0.1.1', name: 'ecs', config: ecs do
+  Component template: 'ecs-v2@0.2.3', name: 'ecs', config: ecs do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'KeyName', value: cfout('keypair.KeyPair')
@@ -95,7 +95,7 @@ CfhighlanderTemplate do
     parameter name: 'ContainerInsights', value: 'disabled'
   end
 
-  Component template: 'github:base2services/hl-component-ciinabox-efs#0.2.0', name: 'efs', config: efs do
+  Component template: 'github:base2services/hl-component-ciinabox-efs#0.2.1', name: 'efs', config: efs do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VolumeName', value: "/#{ciinabox_name}-ciinabox-jenkins-master"
@@ -105,7 +105,7 @@ CfhighlanderTemplate do
     parameter name: 'VPCCidr', value: cfout('vpc.VPCCidr')
   end
 
-  Component template: 'fargate-v2@0.7.3', name: 'jenkins', config: jenkins do
+  Component template: 'fargate-v2@0.8.2', name: 'jenkins', config: jenkins do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'VPCId', value: cfout('vpc.VPCId')
@@ -146,7 +146,7 @@ CfhighlanderTemplate do
     
     versions = config.fetch('version', {})
     
-    Component template: 'ecs-service@2.12.0', name: service, config: config['service'] do
+    Component template: 'ecs-service@2.17.0', name: service, config: config['service'] do
       parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
       parameter name: 'EnvironmentType', value: 'development'
       parameter name: 'NetworkPrefix', value: '10'

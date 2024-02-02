@@ -7,7 +7,7 @@ CfhighlanderTemplate do
         ComponentParam 'VPCCidr'
     end
 
-    Component template: 'route53-zone@1.4.0', name: 'intzone', config: internal_zone, render: Inline do
+    Component template: 'route53-zone@1.5.0', name: 'intzone', config: internal_zone, render: Inline do
         parameter name: 'CreateZone', value: 'true'
         parameter name: 'RootDomainName', value: Ref('RootDomainName')
         parameter name: 'AddNSRecords', value: 'true'
@@ -20,7 +20,7 @@ CfhighlanderTemplate do
         parameter name: 'AlternativeNames', value: ''
     end
 
-    Component template: 'application-loadbalancer@0.4.2', name: 'intalb', config: internal_loadbalancer, render: Inline do
+    Component template: 'application-loadbalancer@0.5.0', name: 'intalb', config: internal_loadbalancer, render: Inline do
         parameter name: 'SslCertId', value: cfout('intcert.CertificateArn')
         parameter name: 'SubnetIds', value: Ref('SubnetIds')
         parameter name: 'VPCId', value: Ref('VPCId')
