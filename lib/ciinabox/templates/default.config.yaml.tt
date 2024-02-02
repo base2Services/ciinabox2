@@ -356,6 +356,7 @@ jenkins:
       action:
         - s3:ListBucket
         - s3:GetBucketLocation
+        - s3:Get*
       resource:
         - Fn::Sub: arn:aws:s3:::${S3Bucket}
         - Fn::Sub: arn:aws:s3:::${AWS::AccountId}.${AWS::Region}.cfhighlander.templates
