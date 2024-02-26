@@ -3,7 +3,7 @@ CfhighlanderTemplate do
   ComponentDistribution "s3://#{source_bucket}/cloudformation/ciinabox/#{ciinabox_name}"
   ComponentVersion "#{Ciinabox::VERSION}"
     
-  Component template: 'vpc-v2@0.10.2', name: 'vpc', config: vpc do
+  Component template: 'vpc-v2@0.10.3', name: 'vpc', config: vpc do
     parameter name: 'EnvironmentName', value: "#{ciinabox_name}"
     parameter name: 'EnvironmentType', value: 'development'
     parameter name: 'DnsDomain', value: "#{root_domain}"
